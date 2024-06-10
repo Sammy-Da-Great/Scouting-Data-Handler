@@ -11,4 +11,4 @@ def make_config(config, file_name):
     f.write(json.dumps(config.__dict__))
     f.close
 
-make_config(global_config("testHost", "testuser", "testPassword"), "global_config.json")
+make_config(global_config("defaultHost", "defaultUser", "defaultPassword"), "global_config.json")
