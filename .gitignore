@@ -1,0 +1,5 @@
+# ignore ALL .log files
+#*.log
+
+# ignore ALL files in the config directory
+config/
