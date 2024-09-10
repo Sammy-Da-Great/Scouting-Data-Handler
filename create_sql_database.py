@@ -1,3 +1,4 @@
 from database import *
 
-query("CREATE DATABASE IF NOT EXISTS " + database_name)
+def create_database(name = database_name):
+    query("CREATE DATABASE IF NOT EXISTS " + name)
