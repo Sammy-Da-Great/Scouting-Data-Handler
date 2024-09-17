@@ -23,7 +23,7 @@ def open_file(title, extensions, folder = "c:\\"):
 
     filter = []
     for i, v in enumerate(extensions):
-        filter.append(extensions[i][0] + "|*" + extensions[i][1])
+        filter.append("|*".join(extensions[i]))
     filter = "|".join(filter)
 
     file_dialog.Filter = filter
@@ -39,4 +39,4 @@ def open_file(title, extensions, folder = "c:\\"):
     return(file_dialog.FileName)
     sys.exit()
 
-# open_file("Open Doc", [("Text File", ".txt"), ("Rich Text File", ".rtf")])
+open_file("Open Doc", [("Text File", ".txt"), ("Rich Text File", ".rtf")])
