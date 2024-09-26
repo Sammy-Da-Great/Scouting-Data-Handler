@@ -17,9 +17,9 @@ class Window(QMainWindow):
         self.centralWidget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.setCentralWidget(self.centralWidget)
 
-    def create_toolbar_dropdown(self, name, bar):
+    def create_toolbar_dropdown(self, name, parent):
         self.buffer = QMenu(name, self)
-        bar.addMenu(self.buffer)
+        parent.addMenu(self.buffer)
         return self.buffer
 
     def create_toolbar_button(self, name, parent, action = ""):
@@ -39,6 +39,27 @@ class Window(QMainWindow):
             self.list_buffer.append(self.buffer)
         return self.list_buffer
 
+    def table_buttons(self, target_database, parent, action = ""):
+        self.list_buffer = []
+        self.names = []
+        
+        self.names = database.get_all_tables(target_database)
+
+        for name in self.names:
+            self.buffer = self.create_toolbar_button(name, parent, action)
+            self.list_buffer.append(self.buffer)
+
+        return self.list_buffer
+
+    def database_dropdowns(self, names, parent, action = ""):
+        self.list_buffer = []
+        for name in names:
+            self.buffer = QMenu(name, self)
+            parent.addMenu(self.buffer)
+            self.list_buffer.append(self.buffer)
+            self.table_buttons(name, self.buffer, action)
+        return self.list_buffer
+
     def _createMenuBar(self):
         menuBar = self.menuBar()
 
@@ -55,10 +76,10 @@ class Window(QMainWindow):
         database_dropdown = self.create_toolbar_dropdown("&Database", menuBar)
 
         view_dropdown = self.create_toolbar_dropdown("&View", database_dropdown)
-        self.database_buttons(database_names, view_dropdown)
+        self.database_dropdowns(database_names, view_dropdown)
     #
         export_dropdown = self.create_toolbar_dropdown("&Data Export", database_dropdown)
-        self.database_buttons(database_names, export_dropdown)
+        self.database_dropdowns(database_names, export_dropdown)
 
         import_dropdown = self.create_toolbar_dropdown("&Data Import", database_dropdown)
         self.database_buttons(database_names, import_dropdown)
@@ -70,7 +91,13 @@ def start_app():
     app = QApplication(sys.argv)
     win = Window()
     win.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    #APP CLOSED
+    import cleanup
+    cleanup.remove_temp_dir()
+
+#def closeEvent(self, e):
+    
 
 if __name__ == "__main__":
     start_app()

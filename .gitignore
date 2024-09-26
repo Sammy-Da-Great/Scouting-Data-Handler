@@ -4,3 +4,4 @@
 # ignore ALL files in the config directory
 config/
 __pycache__/
+tmp/
