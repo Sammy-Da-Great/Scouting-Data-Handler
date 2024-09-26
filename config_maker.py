@@ -24,7 +24,7 @@ def initialize_configs():
     if not(Path("config/global_config.json").is_file()):
         make_config(Global_Config("localHost", "defaultUser", "defaultPassword", "defaultDatabaseName"), "global_config.json")
 
-def read_global_config(file_name):
+def read_global_config(file_name = "global_config.json"):
     f = open("config/" + file_name,"r")
     return(Global_Config(**json.loads(f.read())))
     f.close()
