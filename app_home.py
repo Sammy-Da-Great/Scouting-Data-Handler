@@ -17,6 +17,12 @@ class Window(QMainWindow):
         self.centralWidget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.setCentralWidget(self.centralWidget)
 
+    def set_open_table(self, button, target_database):
+        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text()))
+
+    def open_table(self, file_name, database_name, table_name):
+        database.get_csv_from_database(file_name, database_name, table_name)
+
     def create_toolbar_dropdown(self, name, parent):
         self.buffer = QMenu(name, self)
         parent.addMenu(self.buffer)
@@ -44,10 +50,14 @@ class Window(QMainWindow):
         self.names = []
         
         self.names = database.get_all_tables(target_database)
-
+        if not self.names:
+            return(list())
+    
         for name in self.names:
-            self.buffer = self.create_toolbar_button(name, parent, action)
+            self.buffer = self.create_toolbar_button(name, parent)
             self.list_buffer.append(self.buffer)
+
+        self.list_buffer = list(map(lambda mylambda: self.set_open_table(mylambda, target_database), self.list_buffer))
 
         return self.list_buffer
 
@@ -96,7 +106,6 @@ def start_app():
     import cleanup
     cleanup.remove_temp_dir()
 
-#def closeEvent(self, e):
     
 
 if __name__ == "__main__":
