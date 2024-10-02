@@ -16,7 +16,7 @@ class Window(QMainWindow):
         self.centralWidget = QLabel("Hello, World")
         self.centralWidget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.setCentralWidget(self.centralWidget)
-
+#Create toolbar buttons
     def set_open_table(self, button, target_database):
         button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text()))
 
@@ -69,7 +69,7 @@ class Window(QMainWindow):
             self.list_buffer.append(self.buffer)
             self.table_buttons(name, self.buffer, action)
         return self.list_buffer
-
+#Create toolbar
     def _createMenuBar(self):
         menuBar = self.menuBar()
 
@@ -96,6 +96,7 @@ class Window(QMainWindow):
         
         self.create_toolbar_button("&Settings", database_dropdown)
     #
+#
 
 def start_app():
     app = QApplication(sys.argv)
@@ -105,8 +106,5 @@ def start_app():
     #APP CLOSED
     import cleanup
     cleanup.remove_temp_dir()
-
-    
-
 if __name__ == "__main__":
     start_app()
