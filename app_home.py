@@ -21,7 +21,7 @@ class Window(QMainWindow):
         button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text()))
 
     def open_table(self, file_name, database_name, table_name):
-        database.get_csv_from_database(file_name, database_name, table_name)
+        database.get_csv_from_database("cache/" + file_name, database_name, table_name)
 
     def create_toolbar_dropdown(self, name, parent):
         self.buffer = QMenu(name, self)
