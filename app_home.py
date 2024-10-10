@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton
 import database
 
 class Window(QMainWindow):
@@ -11,12 +11,73 @@ class Window(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Python Menus & Toolbars")
         self.resize(1000, 500)
-        self._createMenuBar()
 
-        self.centralWidget = QLabel("Hello, World")
-        self.centralWidget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-        self.setCentralWidget(self.centralWidget)
-#Create toolbar buttons
+        self.tabs = Tabs(self)
+        self.setCentralWidget(self.tabs)
+        self.tabs.add("test")
+
+        self.menubar = MenuBar(self)
+
+class Tabs(QWidget):
+    
+    def __init__(self, parent):
+        super(QWidget, self).__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.tab_bar = self._createTabBar()
+
+    tablist = dict()
+
+    def _createTabBar(self):
+        # Initialize tab screen
+        tabs = QTabWidget()
+        tabs.resize(300,200)
+
+        self.layout.addWidget(tabs)
+        self.setLayout(self.layout)
+        return(tabs)
+
+    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None):
+        if parent == None:
+            parent = self.tab_bar
+        if self.test(name, dictionary, parent):
+            buffer = parent[name]
+        else:
+            buffer = QWidget()
+            parent.addTab(buffer, name)
+        
+        buffer.layout = QVBoxLayout()
+        if content != None:
+            buffer.layout.addWidget(content)
+
+        dictionary[name] = (buffer, parent.indexOf(buffer))
+
+        return(buffer)
+
+    def delete(self, name, dictionary = tablist, parent = None):
+        if parent == None:
+            parent = self.tab_bar
+        if self.test(name, dictionary, parent):
+            parent.removeTab(dictionary[name][1])
+            del dictionary[name]
+        else:
+            print("Key " + name + "doesn't exist")
+
+    def test(self, name, dictionary = tablist, parent = None):
+        if parent == None:
+            parent = self.tab_bar
+        return(name in dictionary.keys())
+    
+    def get(self, name, dictionary = tablist):
+        return(dictionary[name][0])
+
+class MenuBar(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__(parent)
+        self.parent = parent
+        self._createMenuBar()
+        self.tabs = parent.tabs
+
+    #Toolbar Functions
     def set_open_table(self, button, target_database):
         button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text()))
 
@@ -24,70 +85,70 @@ class Window(QMainWindow):
         database.get_csv_from_database("cache/" + file_name, database_name, table_name)
 
     def create_toolbar_dropdown(self, name, parent):
-        self.buffer = QMenu(name, self)
-        parent.addMenu(self.buffer)
-        return self.buffer
+        buffer = QMenu(name, self)
+        parent.addMenu(buffer)
+        return buffer
 
-    def create_toolbar_button(self, name, parent, action = ""):
-        self.buffer = QAction(name, self)
-        parent.addAction(self.buffer)
-        if not(action == ""):
-            self.buffer.triggered.connect(action)
-        return self.buffer
+    def create_toolbar_button(self, name, parent, action = None):
+        buffer = QAction(name, self)
+        parent.addAction(buffer)
+        if action != None:
+            buffer.triggered.connect(action)
+        return buffer
     
     def database_buttons(self, names, parent, action = ""):
-        self.list_buffer = []
+        list_buffer = []
         for name in names:
-            self.buffer = QAction(name, self)
-            parent.addAction(self.buffer)
+            buffer = QAction(name, self)
+            parent.addAction(buffer)
             if not(action == ""):
-                self.buffer.triggered.connect(action)
-            self.list_buffer.append(self.buffer)
-        return self.list_buffer
+                buffer.triggered.connect(action)
+            list_buffer.append(buffer)
+        return list_buffer
 
     def table_buttons(self, target_database, parent, action = ""):
-        self.list_buffer = []
-        self.names = []
+        list_buffer = []
+        names = []
         
-        self.names = database.get_all_tables(target_database)
-        if not self.names:
+        names = database.get_all_tables(target_database)
+        if not names:
             return(list())
     
-        for name in self.names:
-            self.buffer = self.create_toolbar_button(name, parent)
-            self.list_buffer.append(self.buffer)
+        for name in names:
+            buffer = self.create_toolbar_button(name, parent)
+            list_buffer.append(buffer)
 
-        self.list_buffer = list(map(lambda mylambda: self.set_open_table(mylambda, target_database), self.list_buffer))
+        list_buffer = list(map(lambda mylambda: self.set_open_table(mylambda, target_database), list_buffer))
 
-        return self.list_buffer
+        return list_buffer
 
     def database_dropdowns(self, names, parent, action = ""):
         self.list_buffer = []
         for name in names:
-            self.buffer = QMenu(name, self)
-            parent.addMenu(self.buffer)
-            self.list_buffer.append(self.buffer)
-            self.table_buttons(name, self.buffer, action)
+            buffer = QMenu(name, self)
+            parent.addMenu(buffer)
+            self.list_buffer.append(buffer)
+            self.table_buttons(name, buffer, action)
         return self.list_buffer
-#Create toolbar
-    def _createMenuBar(self):
-        menuBar = self.menuBar()
 
-    #File
+    def _createMenuBar(self):
+        menuBar = self.parent.menuBar()
+
+        #File
         file_dropdown = self.create_toolbar_dropdown("&File", menuBar)
 
         file_dropdown.addSeparator()
         self.exitAction = self.create_toolbar_button("&Exit", file_dropdown, self.close)
-    #
-        self.create_toolbar_button("&Home", menuBar)
-    #Database
+        #
+        homeAction = self.create_toolbar_button("&Home", menuBar)
+        #Database
         database_names = database.get_all_databases()
 
         database_dropdown = self.create_toolbar_dropdown("&Database", menuBar)
 
         view_dropdown = self.create_toolbar_dropdown("&View", database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
-    #
+        #
         export_dropdown = self.create_toolbar_dropdown("&Data Export", database_dropdown)
         self.database_dropdowns(database_names, export_dropdown)
 
@@ -95,8 +156,9 @@ class Window(QMainWindow):
         self.database_buttons(database_names, import_dropdown)
         
         self.create_toolbar_button("&Settings", database_dropdown)
-    #
-#
+        #
+
+
 
 def start_app():
     app = QApplication(sys.argv)
@@ -107,4 +169,5 @@ def start_app():
     import cleanup
     cleanup.remove_temp_dir()
 if __name__ == "__main__":
+    import initialization
     start_app()

@@ -12,4 +12,5 @@ if not os.path.isdir("tmp/cache"):
 config_maker.initialize_configs()
 create_sql_database.create_database()
 
-app_home.start_app()
+if __name__ == "__main__":
+        app_home.start_app()
