@@ -3,6 +3,7 @@ from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton
 import database
+import os
 
 class Window(QMainWindow):
     """Main Window."""
@@ -77,12 +78,13 @@ class MenuBar(QWidget):
         self._createMenuBar()
         self.tabs = parent.tabs
 
-    #Toolbar Functions
     def set_open_table(self, button, target_database):
-        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text()))
+        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/"))
 
-    def open_table(self, file_name, database_name, table_name):
-        database.get_csv_from_database("cache/" + file_name, database_name, table_name)
+    def open_table(self, file_name, database_name, table_name, category):
+        if not os.path.isdir("tmp/" + category):
+            os.makedirs("tmp/" + category)
+        database.get_csv_from_database(category + file_name, database_name, table_name)
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -90,23 +92,23 @@ class MenuBar(QWidget):
         return buffer
 
     def create_toolbar_button(self, name, parent, action = None):
-        buffer = QAction(name, self)
+        buffer = QAction(name, parent)
         parent.addAction(buffer)
         if action != None:
             buffer.triggered.connect(action)
         return buffer
     
-    def database_buttons(self, names, parent, action = ""):
+    def database_buttons(self, names, parent, action = None):
         list_buffer = []
         for name in names:
             buffer = QAction(name, self)
             parent.addAction(buffer)
-            if not(action == ""):
+            if not(action == None):
                 buffer.triggered.connect(action)
             list_buffer.append(buffer)
         return list_buffer
 
-    def table_buttons(self, target_database, parent, action = ""):
+    def table_buttons(self, target_database, parent, action = None):
         list_buffer = []
         names = []
         
@@ -122,10 +124,10 @@ class MenuBar(QWidget):
 
         return list_buffer
 
-    def database_dropdowns(self, names, parent, action = ""):
+    def database_dropdowns(self, names, parent, action = None):
         self.list_buffer = []
         for name in names:
-            buffer = QMenu(name, self)
+            buffer = QMenu(name, parent)
             parent.addMenu(buffer)
             self.list_buffer.append(buffer)
             self.table_buttons(name, buffer, action)
@@ -157,6 +159,7 @@ class MenuBar(QWidget):
         
         self.create_toolbar_button("&Settings", database_dropdown)
         #
+
 
 
 

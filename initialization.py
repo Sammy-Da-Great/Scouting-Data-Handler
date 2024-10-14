@@ -6,8 +6,7 @@ import os
 
 if not os.path.isdir("tmp"):
         os.makedirs("tmp")
-if not os.path.isdir("tmp/cache"):
-        os.makedirs("tmp/cache")
+
 
 config_maker.initialize_configs()
 create_sql_database.create_database()
