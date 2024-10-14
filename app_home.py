@@ -79,7 +79,7 @@ class MenuBar(QWidget):
         self.tabs = parent.tabs
 
     def set_open_table(self, button, target_database):
-        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/"))
+        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/"))
 
     def open_table(self, file_name, database_name, table_name, category):
         if not os.path.isdir("tmp/" + category):
@@ -137,27 +137,27 @@ class MenuBar(QWidget):
         menuBar = self.parent.menuBar()
 
         #File
-        file_dropdown = self.create_toolbar_dropdown("&File", menuBar)
+        file_dropdown = self.create_toolbar_dropdown("File", menuBar)
 
         file_dropdown.addSeparator()
-        self.exitAction = self.create_toolbar_button("&Exit", file_dropdown, self.close)
+        self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.close)
         #
-        homeAction = self.create_toolbar_button("&Home", menuBar)
+        homeAction = self.create_toolbar_button("Home", menuBar)
         #Database
         database_names = database.get_all_databases()
 
-        database_dropdown = self.create_toolbar_dropdown("&Database", menuBar)
+        database_dropdown = self.create_toolbar_dropdown("Database", menuBar)
 
-        view_dropdown = self.create_toolbar_dropdown("&View", database_dropdown)
+        view_dropdown = self.create_toolbar_dropdown("View", database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
         #
-        export_dropdown = self.create_toolbar_dropdown("&Data Export", database_dropdown)
+        export_dropdown = self.create_toolbar_dropdown("Data Export", database_dropdown)
         self.database_dropdowns(database_names, export_dropdown)
 
-        import_dropdown = self.create_toolbar_dropdown("&Data Import", database_dropdown)
+        import_dropdown = self.create_toolbar_dropdown("Data Import", database_dropdown)
         self.database_buttons(database_names, import_dropdown)
         
-        self.create_toolbar_button("&Settings", database_dropdown)
+        self.create_toolbar_button("Settings", database_dropdown)
         #
 
 
