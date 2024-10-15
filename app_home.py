@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import database
 import os
 
@@ -79,12 +79,15 @@ class MenuBar(QWidget):
         self.tabs = parent.tabs
 
     def set_open_table(self, button, target_database):
-        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/"))
+        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title() == "Data Export"))
 
-    def open_table(self, file_name, database_name, table_name, category):
+    def open_table(self, file_name, database_name, table_name, category, export):
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
-        database.get_csv_from_database(category + file_name, database_name, table_name)
+        if export:
+            SaveFile.file_save(self, file_name, database_name, table_name)
+        else:
+            database.get_csv_from_database(category + file_name, database_name, table_name)
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -160,6 +163,15 @@ class MenuBar(QWidget):
         self.create_toolbar_button("Settings", database_dropdown)
         #
 
+class SaveFile(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__()
+        self.setGeometry(50, 50, 500, 300)
+        self.setWindowTitle("Export File")
+
+    def file_save(self, name, database_name, table_name):
+        filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
+        database.download_csv_from_database(filename, database_name, table_name)
 
 
 

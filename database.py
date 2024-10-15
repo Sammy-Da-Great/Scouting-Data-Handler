@@ -47,3 +47,10 @@ def get_csv_from_database(file_name, database, table):
     buffer.writerows(rows)
     fp.close()
     return('tmp/' + file_name)
+
+def download_csv_from_database(file_destination, database, table):
+    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
+    fp = open(file_destination, 'w')
+    buffer = csv.writer(fp)
+    buffer.writerows(rows)
+    fp.close()
