@@ -171,7 +171,8 @@ class SaveFile(QWidget):
 
     def file_save(self, name, database_name, table_name):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
-        database.download_csv_from_database(filename, database_name, table_name)
+        if not(filename == ''):
+            database.download_csv_from_database(filename, database_name, table_name)
 
 
 
