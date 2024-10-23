@@ -45,7 +45,7 @@ class Tabs(QWidget):
         if parent == None:
             parent = self.tab_bar
         if self.test(name, dictionary, parent):
-            buffer = parent[name]
+            buffer = dictionary[name][0]
         else:
             buffer = QWidget()
             parent.addTab(buffer, name)
@@ -55,7 +55,8 @@ class Tabs(QWidget):
         if content != None:
             buffer.layout.addWidget(content)
 
-        dictionary[name] = (buffer, parent.indexOf(buffer))
+        if not(self.test(name, dictionary, parent)):
+            dictionary[name] = (buffer, parent.indexOf(buffer))
 
         return(buffer)
 
@@ -80,13 +81,13 @@ class Tabs(QWidget):
     def deleteByIndex(self, index, dictionary = tablist):
         tab = self.tab_bar.widget(index)
         tab_name = self.tab_bar.tabText(index)
-        
+
         self.delete(tab_name)
 
     def test(self, name, dictionary = tablist, parent = None):
         if parent == None:
             parent = self.tab_bar
-        return(name in dictionary.keys())
+        return(name in dictionary)
     
     def get(self, name, dictionary = tablist):
         return(dictionary[name][0])
