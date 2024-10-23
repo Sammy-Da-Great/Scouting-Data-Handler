@@ -35,6 +35,10 @@ class Tabs(QWidget):
 
         self.layout.addWidget(tabs)
         self.setLayout(self.layout)
+
+        tabs.setTabsClosable(True)
+        tabs.tabCloseRequested.connect(self.deleteByIndex)
+
         return(tabs)
 
     def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None):
@@ -45,6 +49,7 @@ class Tabs(QWidget):
         else:
             buffer = QWidget()
             parent.addTab(buffer, name)
+            parent.tabBar().setTabButton(parent.indexOf(buffer), parent.tabBar().RightSide, self.deleteButton(buffer))
         
         buffer.layout = QVBoxLayout()
         if content != None:
@@ -54,14 +59,29 @@ class Tabs(QWidget):
 
         return(buffer)
 
+    def deleteButton(self, tab):
+        buffer = TabButtonWidget()
+        buffer.button_remove.clicked.connect(self.deleteByIndex)
+        return(buffer)
+
     def delete(self, name, dictionary = tablist, parent = None):
         if parent == None:
             parent = self.tab_bar
         if self.test(name, dictionary, parent):
-            parent.removeTab(dictionary[name][1])
+            tab = dictionary[name][0]
+
+            tab.deleteLater()
+            parent.removeTab(parent.indexOf(tab))
+
             del dictionary[name]
         else:
             print("Key " + name + "doesn't exist")
+        
+    def deleteByIndex(self, index, dictionary = tablist):
+        tab = self.tab_bar.widget(index)
+        tab_name = self.tab_bar.tabText(index)
+        
+        self.delete(tab_name)
 
     def test(self, name, dictionary = tablist, parent = None):
         if parent == None:
@@ -71,6 +91,10 @@ class Tabs(QWidget):
     def get(self, name, dictionary = tablist):
         return(dictionary[name][0])
 
+    def createDataTab(self, name, filepath = None):
+        self.add(name)
+
+
 class MenuBar(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
@@ -79,15 +103,17 @@ class MenuBar(QWidget):
         self.tabs = parent.tabs
 
     def set_open_table(self, button, target_database):
-        button.triggered.connect(lambda: self.open_table(button.text() + ".csv", target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title() == "Data Export"))
+        button.triggered.connect(lambda: self.open_table(button.text(), target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title()))
 
-    def open_table(self, file_name, database_name, table_name, category, export):
+    def open_table(self, file_name, database_name, table_name, category, action):
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
-        if export:
-            SaveFile.file_save(self, file_name, database_name, table_name)
+        if action == "Data Export":
+            SaveFile.file_save(self, file_name + ".csv", database_name, table_name)
+        elif action == "View":
+            self.tabs.createDataTab(file_name)
         else:
-            database.get_csv_from_database(category + file_name, database_name, table_name)
+            database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -171,10 +197,28 @@ class SaveFile(QWidget):
 
     def file_save(self, name, database_name, table_name):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
-        if not(filename == ''):
+        if not(filename == ''): #If not cancelled
             database.download_csv_from_database(filename, database_name, table_name)
 
+class TabButtonWidget(QWidget):
+    def __init__(self):
+        super(TabButtonWidget, self).__init__()
+        # Create button's
+        self.button_remove = QPushButton("-")
 
+        # Set button size
+        self.button_remove.setFixedSize(16, 16)
+
+        # Create layout
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        # Add button's to layout
+        self.layout.addWidget(self.button_remove)
+
+        # Use layout in widget
+        self.setLayout(self.layout)
 
 def start_app():
     app = QApplication(sys.argv)
