@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget
 import database
 import os
 
@@ -15,7 +15,11 @@ class Window(QMainWindow):
 
         self.tabs = Tabs(self)
         self.setCentralWidget(self.tabs)
-        self.tabs.add("test")
+
+        test_tab = self.tabs.add("test")
+
+        button = QPushButton("CLICK", test_tab)
+        button.setGeometry(200, 150, 100, 40)
 
         self.menubar = MenuBar(self)
 
@@ -26,7 +30,7 @@ class Tabs(QWidget):
         self.layout = QVBoxLayout(self)
         self.tab_bar = self._createTabBar()
 
-    tablist = dict()
+    tablist = dict() # tablist[tab_name] == (tab, index in tab bar)
 
     def _createTabBar(self):
         # Initialize tab screen
@@ -41,60 +45,68 @@ class Tabs(QWidget):
 
         return(tabs)
 
-    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None):
-        if parent == None:
+    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QVBoxLayout()):
+        # Creates or modifies a tab.
+        if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
-        if self.test(name, dictionary, parent):
+
+        if self.test(name, dictionary, parent): #if tab name already exists in this location, fetch the tab. Else, create a new tab at location.
             buffer = dictionary[name][0]
         else:
             buffer = QWidget()
             parent.addTab(buffer, name)
-            parent.tabBar().setTabButton(parent.indexOf(buffer), parent.tabBar().RightSide, self.deleteButton(buffer))
+            parent.tabBar().setTabButton(parent.indexOf(buffer), parent.tabBar().RightSide, self.deleteButton(buffer)) # Puts a delete button on the new tab
         
-        buffer.layout = QVBoxLayout()
+        buffer.layout = layout #Layout of new tab
         if content != None:
             buffer.layout.addWidget(content)
 
-        if not(self.test(name, dictionary, parent)):
+        if not(self.test(name, dictionary, parent)): #if the tab has not been added to dictionary, add it.
             dictionary[name] = (buffer, parent.indexOf(buffer))
 
         return(buffer)
 
     def deleteButton(self, tab):
+        # Returns a delete button
         buffer = TabButtonWidget()
         buffer.button_remove.clicked.connect(self.deleteByIndex)
         return(buffer)
 
     def delete(self, name, dictionary = tablist, parent = None):
-        if parent == None:
+        # Deletes a tab from the dictionary and tab bar
+        if parent == None: # If no parent is specified, default to tab_bar
             parent = self.tab_bar
+
         if self.test(name, dictionary, parent):
             tab = dictionary[name][0]
 
-            tab.deleteLater()
-            parent.removeTab(parent.indexOf(tab))
+            tab.deleteLater() # Deletes the tab
+            parent.removeTab(parent.indexOf(tab)) # Removes the tab from the tab bar
 
-            del dictionary[name]
-        else:
+            del dictionary[name] # Removes the tab from the dictionary
+        else: # If tab doesn't exist, return exception
             print("Key " + name + "doesn't exist")
         
-    def deleteByIndex(self, index, dictionary = tablist):
+    def deleteByIndex(self, index, dictionary = tablist, parent = None):
+        # Fetches the name of a tab from the index and runs self.delete()
         tab = self.tab_bar.widget(index)
         tab_name = self.tab_bar.tabText(index)
 
-        self.delete(tab_name)
+        self.delete(tab_name, parent = None)
 
-    def test(self, name, dictionary = tablist, parent = None):
+    def test(self, name, dictionary = tablist, parent = None): # Boolean
+        # Tests if a tab exists in tab_bar
         if parent == None:
             parent = self.tab_bar
-        return(name in dictionary)
-    
-    def get(self, name, dictionary = tablist):
-        return(dictionary[name][0])
+        return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
-    def createDataTab(self, name, filepath = None):
-        self.add(name)
-
+    def createDataTab(self, name, database_name, table_name): #QWidget[]
+        tab = self.add(name)
+        #if os.path.isfile(filepath):
+        table = QTableWidget(*database.get_dimensions(database_name, table_name), tab)
+        tab.layout.addWidget(table)
+        #else:
+        #    print(f'{filepath} does not exist')
 
 class MenuBar(QWidget):
     def __init__(self, parent):
@@ -112,9 +124,10 @@ class MenuBar(QWidget):
         if action == "Data Export":
             SaveFile.file_save(self, file_name + ".csv", database_name, table_name)
         elif action == "View":
-            self.tabs.createDataTab(file_name)
-        else:
             database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
+            self.tabs.createDataTab(file_name, database_name, table_name)
+        
+        print(category + file_name + ".csv")
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -220,6 +233,8 @@ class TabButtonWidget(QWidget):
 
         # Use layout in widget
         self.setLayout(self.layout)
+
+
 
 def start_app():
     app = QApplication(sys.argv)

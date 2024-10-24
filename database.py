@@ -5,12 +5,13 @@ from types import SimpleNamespace
 from pathlib import Path
 import csv
 import os
+import json
 
 config = config_maker.read_global_config("global_config.json")
 
 database_name = config.database_name
 
-def query(query_text, input_data = ""):
+def query(query_text, input_data = ""): # cursor
     mydb = mysql.connector.connect(
         host = config.host,
         user = config.user,
@@ -41,8 +42,9 @@ def get_all_tables(database):
 def get_csv_from_database(file_name, database, table):
     if not os.path.isdir("tmp"):
         os.makedirs("tmp")
-    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
-    fp = open('tmp/' + file_name, 'w')
+    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall() # fetch all data
+
+    fp = open('tmp/' + file_name, 'w') # Write data to file
     buffer = csv.writer(fp)
     buffer.writerows(rows)
     fp.close()
@@ -54,3 +56,28 @@ def download_csv_from_database(file_destination, database, table):
     buffer = csv.writer(fp)
     buffer.writerows(rows)
     fp.close()
+
+def column_data(database, table, column_name): # Returns json.loads data
+    query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' and COLUMN_NAME=\'{column_name}\'')
+    dict_output = dict()
+
+    columns = [column[0] for column in query_output.description]
+    data = [dict(zip(columns, row)) for row in query_output.fetchall()]
+
+    json_data = json.loads(json.dumps(data[0], indent=4))
+    return json_data
+
+def columns(database, table): # string[]
+    return [tupleData[0] for tupleData in columns_and_datatypes(database, table)]
+
+def columns_and_datatypes(database, table): # (name (string), datatype (string))
+    names = query(f'select COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+    types = query(f'select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+
+    return list(map(lambda x, y:(x[0],y[0]), names, types))
+
+def get_dimensions(database, table): # Tuple (entry count (int), key count (int))
+    entry_count = query(f'SELECT COUNT(*) FROM {database}.{table}').fetchall()[0][0]
+    key_count = len(columns(database, table))
+
+    return((entry_count, key_count))
