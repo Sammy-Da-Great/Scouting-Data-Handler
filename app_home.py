@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout
 import database
 import os
 
@@ -12,16 +12,16 @@ class Window(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Python Menus & Toolbars")
         self.resize(1000, 500)
+        self.showMaximized()
 
         self.tabs = Tabs(self)
         self.setCentralWidget(self.tabs)
 
         test_tab = self.tabs.add("test")
 
-        button = QPushButton("CLICK", test_tab)
-        button.setGeometry(200, 150, 100, 40)
-
         self.menubar = MenuBar(self)
+
+        self.layout = QGridLayout()
 
 class Tabs(QWidget):
     
@@ -29,6 +29,8 @@ class Tabs(QWidget):
         super(QWidget, self).__init__(parent)
         self.layout = QVBoxLayout(self)
         self.tab_bar = self._createTabBar()
+        self.parent = parent
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     tablist = dict() # tablist[tab_name] == (tab, index in tab bar)
 
@@ -41,11 +43,12 @@ class Tabs(QWidget):
         self.setLayout(self.layout)
 
         tabs.setTabsClosable(True)
-        tabs.tabCloseRequested.connect(self.deleteByIndex)
+        #tabs.tabCloseRequested.connect(self.deleteByIndex)
+        tabs.tabCloseRequested.connect(lambda index: self.deleteByIndex(index))
 
         return(tabs)
 
-    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QVBoxLayout()):
+    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QGridLayout()):
         # Creates or modifies a tab.
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -55,7 +58,6 @@ class Tabs(QWidget):
         else:
             buffer = QWidget()
             parent.addTab(buffer, name)
-            parent.tabBar().setTabButton(parent.indexOf(buffer), parent.tabBar().RightSide, self.deleteButton(buffer)) # Puts a delete button on the new tab
         
         buffer.layout = layout #Layout of new tab
         if content != None:
@@ -64,12 +66,9 @@ class Tabs(QWidget):
         if not(self.test(name, dictionary, parent)): #if the tab has not been added to dictionary, add it.
             dictionary[name] = (buffer, parent.indexOf(buffer))
 
-        return(buffer)
+        buffer.layout.setContentsMargins(0,0,0,0)
+        buffer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-    def deleteButton(self, tab):
-        # Returns a delete button
-        buffer = TabButtonWidget()
-        buffer.button_remove.clicked.connect(self.deleteByIndex)
         return(buffer)
 
     def delete(self, name, dictionary = tablist, parent = None):
@@ -102,11 +101,19 @@ class Tabs(QWidget):
 
     def createDataTab(self, name, database_name, table_name): #QWidget[]
         tab = self.add(name)
-        #if os.path.isfile(filepath):
         table = QTableWidget(*database.get_dimensions(database_name, table_name), tab)
-        tab.layout.addWidget(table)
-        #else:
-        #    print(f'{filepath} does not exist')
+
+        table.setHorizontalHeaderLabels(database.columns(database_name, table_name))
+        
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        
+        
+        header = table.horizontalHeader()
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layoutGrid.addWidget(table)
+
+        tab.setAutoFillBackground(True)
 
 class MenuBar(QWidget):
     def __init__(self, parent):
@@ -213,28 +220,6 @@ class SaveFile(QWidget):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
         if not(filename == ''): #If not cancelled
             database.download_csv_from_database(filename, database_name, table_name)
-
-class TabButtonWidget(QWidget):
-    def __init__(self):
-        super(TabButtonWidget, self).__init__()
-        # Create button's
-        self.button_remove = QPushButton("-")
-
-        # Set button size
-        self.button_remove.setFixedSize(16, 16)
-
-        # Create layout
-        self.layout = QVBoxLayout()
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
-        # Add button's to layout
-        self.layout.addWidget(self.button_remove)
-
-        # Use layout in widget
-        self.setLayout(self.layout)
-
-
 
 def start_app():
     app = QApplication(sys.argv)
