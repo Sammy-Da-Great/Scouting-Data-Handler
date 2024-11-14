@@ -121,6 +121,20 @@ class Tabs(QWidget):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(data[y][x]))
 
+    def createImportTab(self):
+        filepath = SaveFile.file_dialog(self)
+        if filepath != None:
+
+            tab = self.add("Import Data", tab_type = "ImportTab")
+            label = QLabel(filepath)
+
+            layoutGrid = QGridLayout()
+            tab.setLayout(layoutGrid)
+
+            layoutGrid.addWidget(label)
+            tab.setAutoFillBackground(True)
+
+
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -260,8 +274,7 @@ class MenuBar(QWidget):
         export_dropdown = self.create_toolbar_dropdown("Data Export", database_dropdown)
         self.database_dropdowns(database_names, export_dropdown)
 
-        import_dropdown = self.create_toolbar_dropdown("Data Import", database_dropdown)
-        self.database_buttons(database_names, import_dropdown)
+        import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
         
         self.create_toolbar_button("Settings", database_dropdown)
         #
@@ -275,6 +288,9 @@ class SaveFile(QWidget):
     def file_save(self, name, database_name, table_name):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
         return filename
+
+    def file_dialog(self):
+        return QFileDialog.getOpenFileName(self, "Open File", "", "Comma Separated (*.csv)")[0]
             
 
 def start_app():
