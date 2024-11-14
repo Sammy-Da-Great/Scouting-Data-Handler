@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem
 import database
 import os
 
@@ -32,7 +32,7 @@ class Tabs(QWidget):
         self.parent = parent
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-    tablist = dict() # tablist[tab_name] == (tab, index in tab bar)
+    tablist = dict() # tablist[tab_name] == (tab, index in tab bar, tab type)
 
     def _createTabBar(self):
         # Initialize tab screen
@@ -48,7 +48,7 @@ class Tabs(QWidget):
 
         return(tabs)
 
-    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QGridLayout()):
+    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QGridLayout(), tab_type = None):
         # Creates or modifies a tab.
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -64,7 +64,7 @@ class Tabs(QWidget):
             buffer.layout.addWidget(content)
 
         if not(self.test(name, dictionary, parent)): #if the tab has not been added to dictionary, add it.
-            dictionary[name] = (buffer, parent.indexOf(buffer))
+            dictionary[name] = (buffer, parent.indexOf(buffer), tab_type)
 
         buffer.layout.setContentsMargins(0,0,0,0)
         buffer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -99,21 +99,74 @@ class Tabs(QWidget):
             parent = self.tab_bar
         return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
-    def createDataTab(self, name, database_name, table_name): #QWidget[]
-        tab = self.add(name)
-        table = QTableWidget(*database.get_dimensions(database_name, table_name), tab)
+    def createDataTab(self, name, database_name, table_name, filepath): #QWidget[]
+        tab = self.add(name, tab_type = "DataTab")
 
+        label = QLabel(filepath)
+
+        dimensions = database.get_dimensions(database_name, table_name)
+        table = QTableWidget(*dimensions, tab)
         table.setHorizontalHeaderLabels(database.columns(database_name, table_name))
-        
         layoutGrid = QGridLayout()
         tab.setLayout(layoutGrid)
-        
-        
         header = table.horizontalHeader()
         table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layoutGrid.addWidget(table)
 
+        layoutGrid.addWidget(label)
+        layoutGrid.addWidget(table)
         tab.setAutoFillBackground(True)
+
+        data = database.read_csv(filepath)
+        for y in range(0,dimensions[0]):
+            for x in range(0, dimensions[1]):
+                table.setItem(y,x,QTableWidgetItem(data[y][x]))
+
+    def getCurrentTab(self, parent = None):
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+        tab = parent.widget(parent.currentIndex())
+        return tab
+
+    def saveCurrentTabAsCSV(self, parent = None):
+        database.write_csv(*self.currentTabData(parent=parent))
+    
+    def saveCurrentTabSQL(self, parent = None):
+        print("Not programmed yet")
+
+    def saveCurrentTabAsSQL(self, parent = None):
+        print("Not programmed yet")
+
+    def currentTabData(self, parent = None):
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+        index = parent.currentIndex()
+        name = parent.tabText(index)
+        tab_type = self.tablist[name][2]
+        tab = self.tablist[name][0]
+
+        if (tab_type == "DataTab"):
+            table = tab.findChildren(QTableWidget)[0]
+            data = []
+
+            for row in range(table.rowCount()):
+                row_data = []
+                for column in range(table.columnCount()):
+                    item = table.item(row, column)
+                    if item is not None:
+                        row_data.append(item.text())
+                    else:
+                        row_data.append('')
+                data.append(row_data)
+            
+            filepath = tab.findChildren(QLabel)[0].text()
+            return((filepath, data))
+
+
+        else:
+            print(f"Tab {name} is not a data tab")
+
+
+
 
 class MenuBar(QWidget):
     def __init__(self, parent):
@@ -129,10 +182,10 @@ class MenuBar(QWidget):
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
         if action == "Data Export":
-            SaveFile.file_save(self, file_name + ".csv", database_name, table_name)
+            SaveFile.database.download_csv_from_database(SaveFile.file_save(self, file_name + ".csv"), database_name, table_name)
         elif action == "View":
-            database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
-            self.tabs.createDataTab(file_name, database_name, table_name)
+            filepath = database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
+            self.tabs.createDataTab(file_name, database_name, table_name, filepath)
         
         print(category + file_name + ".csv")
 
@@ -189,8 +242,11 @@ class MenuBar(QWidget):
         #File
         file_dropdown = self.create_toolbar_dropdown("File", menuBar)
 
-        file_dropdown.addSeparator()
+        self.saveActionSQL = self.create_toolbar_button("Save Current Tab to SQL", file_dropdown, lambda: self.tabs.saveCurrentTabSQL())
+        self.saveActionSQLAs = self.create_toolbar_button("Save Current Tab as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
+        self.saveActionCSV = self.create_toolbar_button("Save Current Tab as .csv as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.close)
+        
         #
         homeAction = self.create_toolbar_button("Home", menuBar)
         #Database
@@ -218,8 +274,8 @@ class SaveFile(QWidget):
 
     def file_save(self, name, database_name, table_name):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
-        if not(filename == ''): #If not cancelled
-            database.download_csv_from_database(filename, database_name, table_name)
+        return filename
+            
 
 def start_app():
     app = QApplication(sys.argv)

@@ -44,7 +44,7 @@ def get_csv_from_database(file_name, database, table):
         os.makedirs("tmp")
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall() # fetch all data
 
-    fp = open('tmp/' + file_name, 'w') # Write data to file
+    fp = open('tmp/' + file_name, 'w', newline='') # Write data to file
     buffer = csv.writer(fp)
     buffer.writerows(rows)
     fp.close()
@@ -81,3 +81,16 @@ def get_dimensions(database, table): # Tuple (entry count (int), key count (int)
     key_count = len(columns(database, table))
 
     return((entry_count, key_count))
+
+def read_csv(filepath):
+    data = []
+    with open(filepath, 'r') as stream:
+        for rowdata in csv.reader(stream):
+            data.append(rowdata)
+    return data
+
+def write_csv(filepath, data):
+    if filepath != None:
+        with open(filepath, 'w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerows(data)
