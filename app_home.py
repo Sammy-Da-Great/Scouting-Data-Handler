@@ -142,7 +142,9 @@ class Tabs(QWidget):
         return tab
 
     def saveCurrentTabAsCSV(self, parent = None):
-        database.write_csv(*self.currentTabData(parent=parent))
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+        database.write_csv(SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv"), self.currentTabData(parent=parent)[1])
     
     def saveCurrentTabSQL(self, parent = None):
         print("Not programmed yet")
@@ -167,7 +169,7 @@ class Tabs(QWidget):
                 for column in range(table.columnCount()):
                     item = table.item(row, column)
                     if item is not None:
-                        row_data.append(item.text())
+                        row_data.append(str(item.text()))
                     else:
                         row_data.append('')
                 data.append(row_data)
@@ -289,8 +291,11 @@ class SaveFile(QWidget):
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
         return filename
 
-    def file_dialog(self):
-        return QFileDialog.getOpenFileName(self, "Open File", "", "Comma Separated (*.csv)")[0]
+    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"):
+        return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
+
+    def data_save(self, name = "", extension = "Comma Separated (*.csv)"):
+        return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
             
 
 def start_app():
