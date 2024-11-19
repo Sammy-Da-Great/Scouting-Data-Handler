@@ -50,6 +50,14 @@ def get_csv_from_database(file_name, database, table):
     fp.close()
     return('tmp/' + file_name)
 
+def write_csv_to_database(file_name, database, table):
+    fp = open('tmp/' + file_name, 'w', newline='')
+    buffer = csv.reader(fp)
+    columnData = str(columns(database, table))
+    query("DELETE FROM" + database + "." + table)
+    for row in buffer:
+        query("INSERT INTO " + database + "." + table + " " + columnData + " VALUES " + str(tuple(row)))
+
 def download_csv_from_database(file_destination, database, table):
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
     fp = open(file_destination, 'w')

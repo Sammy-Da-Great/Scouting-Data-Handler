@@ -142,10 +142,13 @@ class Tabs(QWidget):
         return tab
 
     def saveCurrentTabAsCSV(self, parent = None):
-        database.write_csv(*self.currentTabData(parent=parent))
+        path = SaveFile(parent).file_save("", "", "")
+        if path != None:
+            database.write_csv(path, self.currentTabData(parent)[1])
     
     def saveCurrentTabSQL(self, parent = None):
-        print("Not programmed yet")
+        filePath = currentTabData()[0]
+        database.write_csv_to_database(currentTabData(parent)[0])
 
     def saveCurrentTabAsSQL(self, parent = None):
         print("Not programmed yet")
