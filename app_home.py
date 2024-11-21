@@ -32,7 +32,7 @@ class Tabs(QWidget):
         self.parent = parent
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-    tablist = dict() # tablist[tab_name] == (tab, index in tab bar, tab type)
+    tablist = dict() # tablist[tab_name] == (tab, index in tab bar, tab type, database info(database, table))
 
     def _createTabBar(self):
         # Initialize tab screen
@@ -64,7 +64,7 @@ class Tabs(QWidget):
             buffer.layout.addWidget(content)
 
         if not(self.test(name, dictionary, parent)): #if the tab has not been added to dictionary, add it.
-            dictionary[name] = (buffer, parent.indexOf(buffer), tab_type)
+            dictionary[name] = [buffer, parent.indexOf(buffer), tab_type, None]
 
         buffer.layout.setContentsMargins(0,0,0,0)
         buffer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -99,9 +99,9 @@ class Tabs(QWidget):
             parent = self.tab_bar
         return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
-    def createDataTab(self, name, database_name, table_name, filepath): #QWidget[]
+    def createDataTab(self, name, database_name, table_name, filepath, dictionary = tablist): #QWidget[]
         tab = self.add(name, tab_type = "DataTab")
-
+        dictionary[name][3] = (database_name, table_name)
         label = QLabel(filepath)
 
         dimensions = database.get_dimensions(database_name, table_name)
@@ -147,13 +147,13 @@ class Tabs(QWidget):
             database.write_csv(path, self.currentTabData(parent)[1])
     
     def saveCurrentTabSQL(self, parent = None):
-        filePath = currentTabData()[0]
-        database.write_csv_to_database(currentTabData(parent)[0])
+        tabData = self.currentTabData(parent)
+        database.write_csv_to_database(tabData[0], tabData[2], tabData[3])
 
     def saveCurrentTabAsSQL(self, parent = None):
         print("Not programmed yet")
 
-    def currentTabData(self, parent = None):
+    def currentTabData(self, parent = None, dictionary = tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
@@ -176,7 +176,7 @@ class Tabs(QWidget):
                 data.append(row_data)
             
             filepath = tab.findChildren(QLabel)[0].text()
-            return((filepath, data))
+            return((filepath, data, dictionary[name][3][0], dictionary[name][3][1]))
 
 
         else:

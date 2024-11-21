@@ -51,12 +51,38 @@ def get_csv_from_database(file_name, database, table):
     return('tmp/' + file_name)
 
 def write_csv_to_database(file_name, database, table):
-    fp = open('tmp/' + file_name, 'w', newline='')
+    fp = open(file_name, 'r', newline='')
     buffer = csv.reader(fp)
-    columnData = str(columns(database, table))
-    query("DELETE FROM" + database + "." + table)
+    columnData = columns_and_datatypes(database, table)
+    createColumnQuery = ""
+    for i in range(len(columnData)):
+        if (i < len(columnData) - 1):
+            createColumnQuery += columnData[i][0] + " " + columnData[i][1] + ", "
+        else:
+            createColumnQuery += columnData[i][0] + " " + columnData[i][1]
+    '''query("DROP TABLE IF EXISTS " + database + "." + table + " ;")
+    query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")'''
     for row in buffer:
-        query("INSERT INTO " + database + "." + table + " " + columnData + " VALUES " + str(tuple(row)))
+        columnQuery = ""
+        valueQuery = ""
+        for i in range(len(columnData)):
+            if (i < len(columnData) - 1):
+                if (columnData[i][1] == "VARCHAR"):
+                    columnQuery += "\"" + columnData[i][0] + "\", "
+                    valueQuery += "\"" + row[i] + "\", "
+                else:
+                    columnQuery += columnData[i][0] + ", "
+                    valueQuery += row[i] + ", "
+            else:
+                if (type(row[i]) == str):
+                    columnQuery += "\"" + columnData[i][0] + "\""
+                    valueQuery += "\"" + row[i] + "\""
+                else:
+                    columnQuery += columnData[i][0]
+                    valueQuery += row[i]
+        print("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+    fp.close()
+
 
 def download_csv_from_database(file_destination, database, table):
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
