@@ -287,14 +287,14 @@ class SaveFile(QWidget):
         self.setGeometry(50, 50, 500, 300)
         self.setWindowTitle("Export File")
 
-    def file_save(self, name, database_name, table_name):
+    def file_save(self, name, database_name, table_name): # Should save to SQL
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
         return filename
 
-    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"):
+    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"): # Returns a filepath
         return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
 
-    def data_save(self, name = "", extension = "Comma Separated (*.csv)"):
+    def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
             
 
