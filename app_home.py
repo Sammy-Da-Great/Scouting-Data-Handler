@@ -152,7 +152,7 @@ class Tabs(QWidget):
             database.write_csv_to_database(tabData[1], tabData[2], tabData[3])
 
     def saveCurrentTabAsSQL(self, parent = None):
-        pass
+        SaveSQLAsDialog(parent)
 
     def currentTabData(self, parent = None, dictionary = tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -298,7 +298,13 @@ class SaveFile(QWidget):
 
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
-            
+    
+class SaveSQLAsDialog(QDialog):
+    def __init__(self, parent):
+        super(QDialog, self).__init__()
+        self.show()
+        self.setWindowModality(True)
+        self.exec_()
 
 def start_app():
     app = QApplication(sys.argv)
