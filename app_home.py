@@ -142,9 +142,9 @@ class Tabs(QWidget):
         return tab
 
     def saveCurrentTabAsCSV(self, parent = None):
-        path = SaveFile(parent).file_save("", "", "")
-        if path != None:
-            database.write_csv(path, self.currentTabData(parent)[1])
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+        database.write_csv(SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv"), self.currentTabData(parent=parent)[1])
     
     def saveCurrentTabSQL(self, parent = None):
         tabData = self.currentTabData(parent)
@@ -171,7 +171,7 @@ class Tabs(QWidget):
                 for column in range(table.columnCount()):
                     item = table.item(row, column)
                     if item is not None:
-                        row_data.append(item.text())
+                        row_data.append(str(item.text()))
                     else:
                         row_data.append('')
                 data.append(row_data)
@@ -289,18 +289,16 @@ class SaveFile(QWidget):
         self.setGeometry(50, 50, 500, 300)
         self.setWindowTitle("Export File")
 
-    def file_save(self, name, database_name, table_name):
+    def file_save(self, name, database_name, table_name): # Should save to SQL
         filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
         return filename
 
-    def file_dialog(self):
-        return QFileDialog.getOpenFileName(self, "Open File", "", "Comma Separated (*.csv)")[0]
-    
-class SaveAsSQL(QDialog):
-    def __init__(self, parent):
-        super(QDialog, self).__init__()
-        self.setWindowTitle("Save Current Tab as...")
-        self.show()
+    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"): # Returns a filepath
+        return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
+
+    def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
+        return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
+            
 
 def start_app():
     app = QApplication(sys.argv)
