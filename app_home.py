@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QDialog
 import database
 import os
 
@@ -148,10 +148,11 @@ class Tabs(QWidget):
     
     def saveCurrentTabSQL(self, parent = None):
         tabData = self.currentTabData(parent)
-        database.write_csv_to_database(tabData[0], tabData[2], tabData[3])
+        if tabData != None:
+            database.write_csv_to_database(tabData[0], tabData[2], tabData[3])
 
     def saveCurrentTabAsSQL(self, parent = None):
-        print("Not programmed yet")
+        pass
 
     def currentTabData(self, parent = None, dictionary = tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -294,7 +295,12 @@ class SaveFile(QWidget):
 
     def file_dialog(self):
         return QFileDialog.getOpenFileName(self, "Open File", "", "Comma Separated (*.csv)")[0]
-            
+    
+class SaveAsSQL(QDialog):
+    def __init__(self, parent):
+        super(QDialog, self).__init__()
+        self.setWindowTitle("Save Current Tab as...")
+        self.show()
 
 def start_app():
     app = QApplication(sys.argv)

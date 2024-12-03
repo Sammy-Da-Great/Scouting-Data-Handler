@@ -23,6 +23,7 @@ def query(query_text, input_data = ""): # cursor
         cursor.execute(query_text)
     else:
         cursor.execute(query_text, input_data)
+    mydb.commit()
     return cursor
 
 def get_all_databases():
@@ -53,34 +54,26 @@ def get_csv_from_database(file_name, database, table):
 def write_csv_to_database(file_name, database, table):
     fp = open(file_name, 'r', newline='')
     buffer = csv.reader(fp)
-    columnData = columns_and_datatypes(database, table)
+    columnData = columns(database, table)
     createColumnQuery = ""
     for i in range(len(columnData)):
         if (i < len(columnData) - 1):
-            createColumnQuery += columnData[i][0] + " " + columnData[i][1] + ", "
+            createColumnQuery += columnData[i] + " text(60000), "
         else:
-            createColumnQuery += columnData[i][0] + " " + columnData[i][1]
-    '''query("DROP TABLE IF EXISTS " + database + "." + table + " ;")
-    query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")'''
+            createColumnQuery += columnData[i] + " text(60000)"
+    query("DROP TABLE IF EXISTS " + database + "." + table + ";")
+    query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
     for row in buffer:
         columnQuery = ""
         valueQuery = ""
         for i in range(len(columnData)):
             if (i < len(columnData) - 1):
-                if (columnData[i][1] == "VARCHAR"):
-                    columnQuery += "\"" + columnData[i][0] + "\", "
-                    valueQuery += "\"" + row[i] + "\", "
-                else:
-                    columnQuery += columnData[i][0] + ", "
-                    valueQuery += row[i] + ", "
+                columnQuery += columnData[i] + ", "
+                valueQuery += "\"" + row[i] + "\", "
             else:
-                if (type(row[i]) == str):
-                    columnQuery += "\"" + columnData[i][0] + "\""
-                    valueQuery += "\"" + row[i] + "\""
-                else:
-                    columnQuery += columnData[i][0]
-                    valueQuery += row[i]
-        print("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+                columnQuery += columnData[i]
+                valueQuery += "\"" + row[i] + "\""
+        query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
     fp.close()
 
 
