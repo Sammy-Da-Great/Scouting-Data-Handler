@@ -149,7 +149,7 @@ class Tabs(QWidget):
     def saveCurrentTabSQL(self, parent = None):
         tabData = self.currentTabData(parent)
         if tabData != None:
-            database.write_csv_to_database(tabData[0], tabData[2], tabData[3])
+            database.write_csv_to_database(tabData[1], tabData[2], tabData[3])
 
     def saveCurrentTabAsSQL(self, parent = None):
         pass

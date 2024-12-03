@@ -51,9 +51,7 @@ def get_csv_from_database(file_name, database, table):
     fp.close()
     return('tmp/' + file_name)
 
-def write_csv_to_database(file_name, database, table):
-    fp = open(file_name, 'r', newline='')
-    buffer = csv.reader(fp)
+def write_csv_to_database(data, database, table):
     columnData = columns(database, table)
     createColumnQuery = ""
     for i in range(len(columnData)):
@@ -63,7 +61,7 @@ def write_csv_to_database(file_name, database, table):
             createColumnQuery += columnData[i] + " text(60000)"
     query("DROP TABLE IF EXISTS " + database + "." + table + ";")
     query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
-    for row in buffer:
+    for row in data:
         columnQuery = ""
         valueQuery = ""
         for i in range(len(columnData)):
@@ -74,7 +72,6 @@ def write_csv_to_database(file_name, database, table):
                 columnQuery += columnData[i]
                 valueQuery += "\"" + row[i] + "\""
         query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
-    fp.close()
 
 
 def download_csv_from_database(file_destination, database, table):
