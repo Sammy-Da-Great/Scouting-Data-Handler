@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QCheckBox
 import database
 import os
 
@@ -58,6 +58,7 @@ class Tabs(QWidget):
         else:
             buffer = QWidget()
             parent.addTab(buffer, name)
+
         
         buffer.layout = layout #Layout of new tab
         if content != None:
@@ -104,35 +105,44 @@ class Tabs(QWidget):
 
         label = QLabel(filepath)
 
+        data = database.read_table(database_name, table_name)
+
         dimensions = database.get_dimensions(database_name, table_name)
+
         table = QTableWidget(*dimensions, tab)
-        table.setHorizontalHeaderLabels(database.columns(database_name, table_name))
+        table.setHorizontalHeaderLabels(data[0])
+        data.pop(0)
+
+        header_v_text = [str(row[0]) for row in data]
+        header_v_text[0] = "data type"
+        table.setVerticalHeaderLabels(header_v_text)
+
         layoutGrid = QGridLayout()
         tab.setLayout(layoutGrid)
-        header = table.horizontalHeader()
         table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         layoutGrid.addWidget(label)
         layoutGrid.addWidget(table)
         tab.setAutoFillBackground(True)
 
-        data = database.read_csv(filepath)
         for y in range(0,dimensions[0]):
             for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(data[y][x]))
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
 
     def createImportTab(self):
+        if self.test("Import Data"): #Multiple tabs with the name name cannot exist
+            self.delete("Import Data")
+
         filepath = SaveFile.file_dialog(self)
         if filepath != None:
 
             tab = self.add("Import Data", tab_type = "ImportTab")
-            label = QLabel(filepath)
-
             layoutGrid = QGridLayout()
             tab.setLayout(layoutGrid)
-
-            layoutGrid.addWidget(label)
             tab.setAutoFillBackground(True)
+
+            content = ImportWizard(self, filepath)
+            layoutGrid.addWidget(content)
 
 
     def getCurrentTab(self, parent = None):
@@ -198,7 +208,7 @@ class MenuBar(QWidget):
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
         if action == "Data Export":
-            SaveFile.database.download_csv_from_database(SaveFile.file_save(self, file_name + ".csv"), database_name, table_name)
+            database.download_csv_from_database(SaveFile.file_save(self, file_name + ".csv"), database_name, table_name)
         elif action == "View":
             filepath = database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
             self.tabs.createDataTab(file_name, database_name, table_name, filepath)
@@ -287,8 +297,8 @@ class SaveFile(QWidget):
         self.setGeometry(50, 50, 500, 300)
         self.setWindowTitle("Export File")
 
-    def file_save(self, name, database_name, table_name): # Should save to SQL
-        filename = QFileDialog.getSaveFileName(self, "Save File", table_name + ".csv", "Comma Separated (*.csv)")[0]
+    def file_save(self, name): # Should save to SQL
+        filename = QFileDialog.getSaveFileName(self, "Save File", name, "Comma Separated (*.csv)")[0]
         return filename
 
     def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"): # Returns a filepath
@@ -296,7 +306,92 @@ class SaveFile(QWidget):
 
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
-            
+        
+class ImportWizard(QWidget):
+    def __init__(self, parent, filepath):
+        super(QWidget, self).__init__(parent)
+
+        self.layoutGrid = QGridLayout(self)
+        self.setLayout(self.layoutGrid)
+        self.setAutoFillBackground(True)
+
+        label = QLabel(filepath)
+        self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
+
+        #####
+        self.data = database.read_csv(filepath)
+        key_number = len(self.data[0])
+
+        #table
+        self.table = QTableWidget(4, key_number)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
+        self.layoutGrid.addWidget(self.table, 1, 1)
+
+        #Checkboxes
+        sidebar = QVBoxLayout()
+        self.format_label = QLabel("Format:")
+        self.key_check = QCheckBox('Keys')
+        self.type_check = QCheckBox('Types')
+        self.key_check.setChecked(True)
+        self.type_check.setChecked(True)
+        self.key_check.stateChanged.connect(self.updateTable)
+        self.type_check.stateChanged.connect(self.updateTable)
+        sidebar.addWidget(self.format_label)
+        sidebar.addWidget(self.key_check)
+        sidebar.addWidget(self.type_check)
+
+        confirm_step_1 = QPushButton("Confirm")
+        sidebar.addWidget(confirm_step_1)
+
+        self.layoutGrid.addLayout(sidebar, 1, 0)
+
+        self.setTable()
+    
+    def setTable(self):
+        for y in [0, 1]:
+            for x in range(0, len(self.data[0])):
+                item = QTableWidgetItem(f'{x}, {y}')
+                self.table.setItem(y, x, item)
+        for y in [2, 3]:
+            for x in range(0, len(self.data[0])):
+                item = QTableWidgetItem(f'{x}, {y}')
+                item.setFlags(Qt.ItemIsEnabled)
+                self.table.setItem(y, x, item)
+        #self.updateTable()
+                
+    def updateTable(self):
+        rowIndex = 0
+        print("update")
+        if self.key_check.isChecked() == True:
+            print("key true")
+            for x in range(0, len(self.data[0])):
+                self.table.item(0, x).setText(str(self.data[rowIndex][x]))
+                print(f'({x}, 0) should be data[{rowIndex}][{x}]={str(self.data[rowIndex][x])}')
+            rowIndex = rowIndex + 1
+        else:
+            print("key false")
+            for x in range(0, len(self.data[0])):
+                self.table.item(0, x).setText("")
+                print(f'({x}, 0) should be \"\"')
+
+        if self.type_check.isChecked() == True:
+            for x in range(0, len(self.data[0])):
+                self.table.item(1, x).setText(str(self.data[rowIndex][x]))
+            rowIndex = rowIndex + 1
+        else:
+            for x in range(0, len(self.data[0])):
+                self.table.item(1, x).setText("")
+        
+        for x in range(0, len(self.data[0])):
+            self.table.item(2, x).setText(str(self.data[rowIndex][x]))
+            self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
+
+        
+
+
+
+       
 
 def start_app():
     app = QApplication(sys.argv)

@@ -42,20 +42,16 @@ def get_all_tables(database):
 def get_csv_from_database(file_name, database, table):
     if not os.path.isdir("tmp"):
         os.makedirs("tmp")
-    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall() # fetch all data
+    rows = read_table(database, table)
 
-    fp = open('tmp/' + file_name, 'w', newline='') # Write data to file
-    buffer = csv.writer(fp)
-    buffer.writerows(rows)
-    fp.close()
+    write_csv('tmp/' + file_name, rows)
+
     return('tmp/' + file_name)
 
-def download_csv_from_database(file_destination, database, table):
-    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
-    fp = open(file_destination, 'w')
-    buffer = csv.writer(fp)
-    buffer.writerows(rows)
-    fp.close()
+def download_csv_from_database(filepath, database, table):
+    rows = read_table(database, table)
+
+    write_csv(filepath, rows)
 
 def column_data(database, table, column_name): # Returns json.loads data
     query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' and COLUMN_NAME=\'{column_name}\'')
@@ -70,17 +66,27 @@ def column_data(database, table, column_name): # Returns json.loads data
 def columns(database, table): # string[]
     return [tupleData[0] for tupleData in columns_and_datatypes(database, table)]
 
-def columns_and_datatypes(database, table): # (name (string), datatype (string))
-    names = query(f'select COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
-    types = query(f'select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+def datatypes(database, table): # string[]
+    return [tupleData[1] for tupleData in columns_and_datatypes(database, table)]
 
-    return list(map(lambda x, y:(x[0],y[0]), names, types))
+def columns_and_datatypes(database, table): # (name (string), datatype (string))
+    data = query(f'select COLUMN_NAME, DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+
+    return data
 
 def get_dimensions(database, table): # Tuple (entry count (int), key count (int))
     entry_count = query(f'SELECT COUNT(*) FROM {database}.{table}').fetchall()[0][0]
     key_count = len(columns(database, table))
 
     return((entry_count, key_count))
+
+def read_table(database, table, header=True, types=True):
+    rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
+    if types:
+        rows.insert(0, datatypes(database, table))
+    if header:
+        rows.insert(0, columns(database, table))
+    return rows
 
 def read_csv(filepath):
     data = []
