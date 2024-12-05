@@ -339,6 +339,110 @@ class SaveSQLAsDialog(QDialog):
         self.layout.addWidget(self.dialogButtons)
         self.show()
 
+class ImportWizard(QWidget):
+    def __init__(self, parent, filepath):
+        super(QWidget, self).__init__(parent)
+
+        self.layoutGrid = QGridLayout(self)
+        self.setLayout(self.layoutGrid)
+        self.setAutoFillBackground(True)
+
+        label = QLabel(filepath)
+        self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
+
+        #####
+        self.data = database.read_csv(filepath)
+        key_number = len(self.data[0])
+
+        #table
+        self.table = QTableWidget(4, key_number)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
+        self.layoutGrid.addWidget(self.table, 1, 1)
+
+        #Checkboxes
+        self.sidebar = QVBoxLayout()
+        self.format_label = QLabel("Format:")
+        self.key_check = QCheckBox('Keys')
+        self.type_check = QCheckBox('Types')
+        self.key_check.setChecked(True)
+        self.type_check.setChecked(True)
+        self.key_check.stateChanged.connect(self.updateTable)
+        self.type_check.stateChanged.connect(self.updateTable)
+        self.sidebar.addWidget(self.format_label)
+        self.sidebar.addWidget(self.key_check)
+        self.sidebar.addWidget(self.type_check)
+
+        self.confirm_step_1 = QPushButton("Confirm")
+        self.confirm_step_1.clicked.connect(self.updateTable)
+        self.sidebar.addWidget(self.confirm_step_1)
+
+        self.layoutGrid.addLayout(self.sidebar, 1, 0)
+
+        self.setTable()
+    
+    def setTable(self):
+        for y in [0, 1]:
+            for x in range(0, len(self.data[0])):
+                item = QTableWidgetItem(f'{x}, {y}')
+                self.setItemToggle(item, False)
+                self.table.setItem(y, x, item)
+        for y in [2, 3]:
+            for x in range(0, len(self.data[0])):
+                item = QTableWidgetItem(f'{x}, {y}')
+                self.setItemToggle(item, True)
+                self.table.setItem(y, x, item)
+        self.updateTable()
+                
+    def updateTable(self):
+        rowIndex = 0
+        print("update")
+        if self.key_check.isChecked() == True:
+            for x in range(0, len(self.data[0])):
+                self.table.item(0, x).setText(str(self.data[rowIndex][x]))
+                self.setItemToggle(self.table.item(0, x), True)
+            rowIndex = rowIndex + 1
+        else:
+            for x in range(0, len(self.data[0])):
+                self.table.item(0, x).setText("")
+                self.setItemToggle(self.table.item(0, x), False)
+
+        if self.type_check.isChecked() == True:
+            for x in range(0, len(self.data[0])):
+                self.table.item(1, x).setText(str(self.data[rowIndex][x]))
+                self.setItemToggle(self.table.item(1, x), True)
+            rowIndex = rowIndex + 1
+        else:
+            for x in range(0, len(self.data[0])):
+                self.table.item(1, x).setText("")
+                self.setItemToggle(self.table.item(1, x), False)
+        
+        for x in range(0, len(self.data[0])):
+            self.table.item(2, x).setText(str(self.data[rowIndex][x]))
+            self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
+        
+    def confirmStep1(self):
+        print("Step 1 complete, loading step 2")
+        self.clearSidebar()
+
+        #for y in [0, 3]:
+        #    for x in range(0, len(self.data[0])):
+        #        self.table.item(y, x).setFlags(Qt.ItemIsEnabled)
+
+    def clearSidebar(self):
+        layout = self.sidebar
+        while self.layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def setItemToggle(self, item, toggle):
+        defaultFlags = QTableWidgetItem().flags()
+        if toggle:
+            item.setFlags(defaultFlags & Qt.ItemIsSelectable)
+        else:
+            item.setFlags(defaultFlags)
+
 def start_app():
     app = QApplication(sys.argv)
     win = Window()
