@@ -12,6 +12,7 @@ config = config_maker.read_global_config("global_config.json")
 database_name = config.database_name
 
 def query(query_text, input_data = ""): # cursor
+    print(query_text, input_data)
     mydb = mysql.connector.connect(
         host = config.host,
         user = config.user,
@@ -49,25 +50,27 @@ def get_csv_from_database(file_name, database, table):
 
     return('tmp/' + file_name)
 
-def write_csv_to_database(data, database, table):
-    columnData = columns(database, table)
+def write_to_database(data, database, table, columnHeaders):
+    dataTypes = data[0]
+    del data[0]
     createColumnQuery = ""
-    for i in range(len(columnData)):
-        if (i < len(columnData) - 1):
-            createColumnQuery += columnData[i] + " text(60000), "
+    for i in range(len(columnHeaders)):
+        if (i < len(columnHeaders) - 1):
+            createColumnQuery += columnHeaders[i] + " " + dataTypes[i] + ", "
         else:
-            createColumnQuery += columnData[i] + " text(60000)"
+            createColumnQuery += columnHeaders[i] + " " + dataTypes[i]
     query("DROP TABLE IF EXISTS " + database + "." + table + ";")
+    query("CREATE DATABASE IF NOT EXISTS " + database + ";")
     query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
     for row in data:
         columnQuery = ""
         valueQuery = ""
-        for i in range(len(columnData)):
-            if (i < len(columnData) - 1):
-                columnQuery += columnData[i] + ", "
+        for i in range(len(columnHeaders)):
+            if (i < len(columnHeaders) - 1):
+                columnQuery += columnHeaders[i] + ", "
                 valueQuery += "\"" + row[i] + "\", "
             else:
-                columnQuery += columnData[i]
+                columnQuery += columnHeaders[i]
                 valueQuery += "\"" + row[i] + "\""
         query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
 
