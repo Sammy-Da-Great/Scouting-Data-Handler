@@ -342,7 +342,7 @@ class ImportWizard(QWidget):
         self.sidebar.addWidget(self.type_check)
 
         self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(self.updateTable)
+        self.confirm_step_1.clicked.connect(self.confirmStep1)
         self.sidebar.addWidget(self.confirm_step_1)
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
@@ -393,13 +393,13 @@ class ImportWizard(QWidget):
         print("Step 1 complete, loading step 2")
         self.clearSidebar()
 
-        #for y in [0, 3]:
-        #    for x in range(0, len(self.data[0])):
-        #        self.table.item(y, x).setFlags(Qt.ItemIsEnabled)
+        for y in [0, 1, 2, 3]:
+            for x in range(0, len(self.data[0])):
+                self.setItemToggle(self.table.item(y, x), True)
 
     def clearSidebar(self):
         layout = self.sidebar
-        while self.layout.count():
+        while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
