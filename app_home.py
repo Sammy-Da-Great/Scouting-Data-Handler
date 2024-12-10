@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QCheckBox
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QCheckBox, QLineEdit
 import database
 import os
 
@@ -128,6 +128,35 @@ class Tabs(QWidget):
         for y in range(0,dimensions[0]):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+
+    def createDataTabFromList(self, name, data, filepath): #QWidget[]
+        tab = self.add(name, tab_type = "DataTab")
+
+        label = QLabel(filepath)
+
+        dimensions = (len(data) - 1, len(data[0]))
+        print(dimensions)
+
+        table = QTableWidget(*dimensions, tab)
+        table.setHorizontalHeaderLabels(data[0])
+        data.pop(0)
+
+        header_v_text = [str(row[0]) for row in data]
+        header_v_text[0] = "data type"
+        table.setVerticalHeaderLabels(header_v_text)
+
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layoutGrid.addWidget(label)
+        layoutGrid.addWidget(table)
+        tab.setAutoFillBackground(True)
+
+        for y in range(0,dimensions[0]):
+            for x in range(0, dimensions[1]):
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+
 
     def createImportTab(self):
         if self.test("Import Data"): #Multiple tabs with the name name cannot exist
@@ -315,7 +344,10 @@ class ImportWizard(QWidget):
         self.setLayout(self.layoutGrid)
         self.setAutoFillBackground(True)
 
+        self.parent = parent
+
         label = QLabel(filepath)
+        self.filepath = filepath
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
@@ -330,6 +362,7 @@ class ImportWizard(QWidget):
 
         #Checkboxes
         self.sidebar = QVBoxLayout()
+        self.tab_name = QLineEdit("test")
         self.format_label = QLabel("Format:")
         self.key_check = QCheckBox('Keys')
         self.type_check = QCheckBox('Types')
@@ -337,12 +370,13 @@ class ImportWizard(QWidget):
         self.type_check.setChecked(True)
         self.key_check.stateChanged.connect(self.updateTable)
         self.type_check.stateChanged.connect(self.updateTable)
+        self.sidebar.addWidget(self.tab_name)
         self.sidebar.addWidget(self.format_label)
         self.sidebar.addWidget(self.key_check)
         self.sidebar.addWidget(self.type_check)
 
         self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(self.confirmStep1)
+        self.confirm_step_1.clicked.connect(self.confirm)
         self.sidebar.addWidget(self.confirm_step_1)
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
@@ -389,13 +423,23 @@ class ImportWizard(QWidget):
             self.table.item(2, x).setText(str(self.data[rowIndex][x]))
             self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
         
-    def confirmStep1(self):
+    def confirm(self):
         print("Step 1 complete, loading step 2")
-        self.clearSidebar()
+        keys = []
+        types = []
+        for x in range(0, len(self.data[0])):
+            keys.append(self.data[0][x])
+            types.append(self.data[1][x])
+        
+        data_buffer = self.data
+        if self.key_check.isChecked():
+            data_buffer.pop(0)
+        if self.type_check.isChecked():
+            data_buffer.pop(0)
 
-        for y in [0, 1, 2, 3]:
-            for x in range(0, len(self.data[0])):
-                self.setItemToggle(self.table.item(y, x), True)
+        self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath)
+        self.parent.delete("Import Data")
+
 
     def clearSidebar(self):
         layout = self.sidebar
