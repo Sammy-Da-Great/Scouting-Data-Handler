@@ -320,6 +320,7 @@ class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, currentDatabase="", currentTable=""):
         super().__init__(parent)
         self.setWindowTitle("Save Current Tab as...")
+        self.setFixedSize(self.width(), self.height())
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.databaseLabel = QLabel("Database")

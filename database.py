@@ -93,11 +93,10 @@ def columns(database, table): # string[]
     return [tupleData[0] for tupleData in columns_and_datatypes(database, table)]
 
 def datatypes(database, table): # string[]
-    return [tupleData[1] for tupleData in columns_and_datatypes(database, table)]
+    return [tupleData[1, 2] for tupleData in columns_and_datatypes(database, table)]
 
-def columns_and_datatypes(database, table): # (name (string), datatype (string))
-    data = query(f'select COLUMN_NAME, DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
-
+def columns_and_datatypes(database, table): # (name (string), datatype (string), size(int))
+    data = query(f'select COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
     return data
 
 def get_dimensions(database, table): # Tuple (entry count (int), key count (int))
@@ -109,7 +108,11 @@ def get_dimensions(database, table): # Tuple (entry count (int), key count (int)
 def read_table(database, table, header=True, types=True):
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
     if types:
-        rows.insert(0, datatypes(database, table))
+        types = datatypes(database, table)
+        for i in range(len(types)):
+            types[i][1] = types[i][1] + "(" + str(types[i][2]) + ")"
+            del types[i][2]
+        rows.insert(0, types)
     if header:
         rows.insert(0, columns(database, table))
     return rows
