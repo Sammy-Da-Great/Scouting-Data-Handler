@@ -195,7 +195,7 @@ class Tabs(QWidget):
             if dialog.exec() == 1:
                 database.write_to_database(tabData[1], dialog.databaseInput.text(), dialog.tableInput.text(), tabData[4])
 
-    def currentTabData(self, parent = None, keys = False):
+    def currentTabData(self, parent = None, keys = False, dictionary=tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
@@ -362,7 +362,6 @@ class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, currentDatabase="", currentTable=""):
         super().__init__(parent)
         self.setWindowTitle("Save Current Tab as...")
-        self.setFixedSize(self.width(), self.height())
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.databaseLabel = QLabel("Database")
