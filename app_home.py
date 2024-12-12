@@ -101,13 +101,11 @@ class Tabs(QWidget):
         return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
     def createDataTab(self, name, database_name, table_name, filepath): #QWidget[]
-        tab = self.add(name, tab_type = "DataTab")
-
-        label = QLabel(filepath)
-
         data = database.read_table(database_name, table_name)
 
-        dimensions = database.get_dimensions(database_name, table_name)
+        self.createDataTabFromList(name, data, filepath)
+
+        '''dimensions = database.get_dimensions(database_name, table_name)
 
         table = QTableWidget(*dimensions, tab)
         table.setHorizontalHeaderLabels(data[0])
@@ -127,12 +125,17 @@ class Tabs(QWidget):
 
         for y in range(0,dimensions[0]):
             for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
     def createDataTabFromList(self, name, data, filepath): #QWidget[]
         tab = self.add(name, tab_type = "DataTab")
+        layoutGrid = QGridLayout()
 
-        label = QLabel(filepath)
+        tab.setAutoFillBackground(True)
+        content = DataTab(self, data, filepath, tab)
+        layoutGrid.addWidget(content)
+
+        '''label = QLabel(filepath)
 
         dimensions = (len(data) - 1, len(data[0]))
 
@@ -154,7 +157,7 @@ class Tabs(QWidget):
 
         for y in range(0, dimensions[0]):
             for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
 
     def createImportTab(self):
@@ -346,7 +349,35 @@ class SaveFile(QWidget):
 
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
-        
+
+class DataTab(QWidget):
+    def __init__(self, parent, data, filepath, tab):
+        super(QWidget, self).__init__(parent)
+        label = QLabel(filepath)
+
+        dimensions = (len(data) - 1, len(data[0]))
+
+        table = QTableWidget(*dimensions, tab)
+        table.setHorizontalHeaderLabels(data[0])
+        data.pop(0)
+
+        header_v_text = [str(row[0]) for row in data]
+        header_v_text[0] = "data type"
+        table.setVerticalHeaderLabels(header_v_text)
+
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layoutGrid.addWidget(label)
+        layoutGrid.addWidget(table)
+        tab.setAutoFillBackground(True)
+
+        for y in range(0, dimensions[0]):
+            for x in range(0, dimensions[1]):
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+
+
 class ImportWizard(QWidget):
     def __init__(self, parent, filepath):
         super(QWidget, self).__init__(parent)
