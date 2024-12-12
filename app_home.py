@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QDialogButtonBox, QDialog
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog
 import database
 import os
 
@@ -128,6 +128,34 @@ class Tabs(QWidget):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
 
+    def createDataTabFromList(self, name, data, filepath): #QWidget[]
+        tab = self.add(name, tab_type = "DataTab")
+
+        label = QLabel(filepath)
+
+        dimensions = (len(data) - 1, len(data[0]))
+
+        table = QTableWidget(*dimensions, tab)
+        table.setHorizontalHeaderLabels(data[0])
+        data.pop(0)
+
+        header_v_text = [str(row[0]) for row in data]
+        header_v_text[0] = "data type"
+        table.setVerticalHeaderLabels(header_v_text)
+
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layoutGrid.addWidget(label)
+        layoutGrid.addWidget(table)
+        tab.setAutoFillBackground(True)
+
+        for y in range(0, dimensions[0]):
+            for x in range(0, dimensions[1]):
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+
+
     def createImportTab(self):
         if self.test("Import Data"): #Multiple tabs with the name name cannot exist
             self.delete("Import Data")
@@ -153,7 +181,7 @@ class Tabs(QWidget):
     def saveCurrentTabAsCSV(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
-        database.write_csv(SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv"), self.currentTabData(parent=parent)[1])
+        database.write_csv(SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv"), self.currentTabData(parent=parent, keys=True)[1])
     
     def saveCurrentTabSQL(self, parent = None):
         tabData = self.currentTabData(parent)
@@ -167,7 +195,7 @@ class Tabs(QWidget):
             if dialog.exec() == 1:
                 database.write_to_database(tabData[1], dialog.databaseInput.text(), dialog.tableInput.text(), tabData[4])
 
-    def currentTabData(self, parent = None, dictionary = tablist):
+    def currentTabData(self, parent = None, keys = False):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
@@ -192,13 +220,25 @@ class Tabs(QWidget):
                     else:
                         row_data.append('')
                 data.append(row_data)
+
+            if keys:
+                key_list = []
+                for c in range(table.columnCount()):
+                    header_item = table.horizontalHeaderItem(c).text()
+                    if header_item == None:
+                        header_item = str(c+1)
+                    
+                    key_list.append(header_item)
+                print(data)
+                print(key_list)
+                data.insert(0, key_list)
             
             filepath = tab.findChildren(QLabel)[0].text()
             return((filepath, data, dictionary[name][3][0], dictionary[name][3][1], columns))
 
 
         else:
-            print(f"Tab {name} is not a data tab")
+            print(f"Tab {name} is not a data tab, it is a {tab_type}")
 
 
 
@@ -283,7 +323,9 @@ class MenuBar(QWidget):
         self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.close)
         
         #
-        homeAction = self.create_toolbar_button("Home", menuBar)
+        editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
+        self.create_toolbar_button("Merge Tabs", editDropdown)
+        self.create_toolbar_button("Modify Keys", editDropdown)
         #Database
         database_names = database.get_all_databases()
 
@@ -348,7 +390,10 @@ class ImportWizard(QWidget):
         self.setLayout(self.layoutGrid)
         self.setAutoFillBackground(True)
 
+        self.parent = parent
+
         label = QLabel(filepath)
+        self.filepath = filepath
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
@@ -363,6 +408,7 @@ class ImportWizard(QWidget):
 
         #Checkboxes
         self.sidebar = QVBoxLayout()
+        self.tab_name = QLineEdit("test")
         self.format_label = QLabel("Format:")
         self.key_check = QCheckBox('Keys')
         self.type_check = QCheckBox('Types')
@@ -370,17 +416,20 @@ class ImportWizard(QWidget):
         self.type_check.setChecked(True)
         self.key_check.stateChanged.connect(self.updateTable)
         self.type_check.stateChanged.connect(self.updateTable)
+        self.sidebar.addWidget(self.tab_name)
         self.sidebar.addWidget(self.format_label)
         self.sidebar.addWidget(self.key_check)
         self.sidebar.addWidget(self.type_check)
 
+        self.tab_name.textChanged[str].connect(self.updateConfirm)
         self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(self.updateTable)
+        self.confirm_step_1.clicked.connect(self.confirm)
         self.sidebar.addWidget(self.confirm_step_1)
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
         self.setTable()
+        self.updateConfirm()
     
     def setTable(self):
         for y in [0, 1]:
@@ -422,17 +471,38 @@ class ImportWizard(QWidget):
             self.table.item(2, x).setText(str(self.data[rowIndex][x]))
             self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
         
-    def confirmStep1(self):
+    def confirm(self):
         print("Step 1 complete, loading step 2")
-        self.clearSidebar()
+        keys = []
+        types = []
+        for x in range(0, len(self.data[0])):
+            keys.append(self.table.item(0, x).text())
+            types.append(self.table.item(1, x).text())
+        
+        data_buffer = self.data
+        if self.key_check.isChecked():
+            data_buffer.pop(0)
+        if self.type_check.isChecked():
+            data_buffer.pop(0)
+        
+        print(self.data)
+        print("Short Data:")
+        print(data_buffer)
 
-        #for y in [0, 3]:
-        #    for x in range(0, len(self.data[0])):
-        #        self.table.item(y, x).setFlags(Qt.ItemIsEnabled)
+        self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath)
+        self.parent.delete("Import Data")
+
+    def updateConfirm(self):
+        banned_names = [""]
+
+        if (self.parent.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
+            self.confirm_step_1.setEnabled(False)
+        else:
+            self.confirm_step_1.setEnabled(True)
 
     def clearSidebar(self):
         layout = self.sidebar
-        while self.layout.count():
+        while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
