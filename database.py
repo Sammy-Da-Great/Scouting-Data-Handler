@@ -100,3 +100,6 @@ def write_csv(filepath, data):
         with open(filepath, 'w', newline='') as stream:
             writer = csv.writer(stream)
             writer.writerows(data)
+
+def test(filepath):
+    return(os.path.isfile(filepath))

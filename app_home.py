@@ -362,39 +362,42 @@ class ImportWizard(QWidget):
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
-        self.data = database.read_csv(filepath)
-        key_number = len(self.data[0])
+        if (filepath == '' or not(database.test(filepath))):
+            self.deleteSelf()
+        else:
+            self.data = database.read_csv(filepath)
+            key_number = len(self.data[0])
 
-        #table
-        self.table = QTableWidget(4, key_number)
-        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
-        self.layoutGrid.addWidget(self.table, 1, 1)
+            #table
+            self.table = QTableWidget(4, key_number)
+            self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
+            self.layoutGrid.addWidget(self.table, 1, 1)
 
-        #Checkboxes
-        self.sidebar = QVBoxLayout()
-        self.tab_name = QLineEdit("test")
-        self.format_label = QLabel("Format:")
-        self.key_check = QCheckBox('Keys')
-        self.type_check = QCheckBox('Types')
-        self.key_check.setChecked(True)
-        self.type_check.setChecked(True)
-        self.key_check.stateChanged.connect(self.updateTable)
-        self.type_check.stateChanged.connect(self.updateTable)
-        self.sidebar.addWidget(self.tab_name)
-        self.sidebar.addWidget(self.format_label)
-        self.sidebar.addWidget(self.key_check)
-        self.sidebar.addWidget(self.type_check)
+            #Checkboxes
+            self.sidebar = QVBoxLayout()
+            self.tab_name = QLineEdit("test")
+            self.format_label = QLabel("Format:")
+            self.key_check = QCheckBox('Keys')
+            self.type_check = QCheckBox('Types')
+            self.key_check.setChecked(True)
+            self.type_check.setChecked(True)
+            self.key_check.stateChanged.connect(self.updateTable)
+            self.type_check.stateChanged.connect(self.updateTable)
+            self.sidebar.addWidget(self.tab_name)
+            self.sidebar.addWidget(self.format_label)
+            self.sidebar.addWidget(self.key_check)
+            self.sidebar.addWidget(self.type_check)
 
-        self.tab_name.textChanged[str].connect(self.updateConfirm)
-        self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(self.confirm)
-        self.sidebar.addWidget(self.confirm_step_1)
+            self.tab_name.textChanged[str].connect(self.updateConfirm)
+            self.confirm_step_1 = QPushButton("Confirm")
+            self.confirm_step_1.clicked.connect(self.confirm)
+            self.sidebar.addWidget(self.confirm_step_1)
 
-        self.layoutGrid.addLayout(self.sidebar, 1, 0)
+            self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
-        self.setTable()
-        self.updateConfirm()
+            self.setTable()
+            self.updateConfirm()
     
     def setTable(self):
         for y in [0, 1]:
@@ -455,6 +458,9 @@ class ImportWizard(QWidget):
         print(data_buffer)
 
         self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath)
+        self.deleteSelf()
+
+    def deleteSelf(self):
         self.parent.delete("Import Data")
 
     def updateConfirm(self):
