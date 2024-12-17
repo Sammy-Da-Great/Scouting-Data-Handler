@@ -100,7 +100,7 @@ class Tabs(QWidget):
 
     def createDataTab(self, name, database_name, table_name, filepath, dictionary = tablist): #QWidget[]
         tab = self.add(name, tab_type = "DataTab")
-        dictionary[name][3] = (database_name, table_name)
+        dictionary[name][3] = [database_name, table_name]
         label = QLabel(filepath)
 
         data = database.read_table(database_name, table_name)

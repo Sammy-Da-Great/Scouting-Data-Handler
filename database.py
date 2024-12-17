@@ -12,7 +12,6 @@ config = config_maker.read_global_config("global_config.json")
 database_name = config.database_name
 
 def query(query_text, input_data = ""): # cursor
-    print(query_text, input_data)
     mydb = mysql.connector.connect(
         host = config.host,
         user = config.user,
@@ -93,10 +92,10 @@ def columns(database, table): # string[]
     return [tupleData[0] for tupleData in columns_and_datatypes(database, table)]
 
 def datatypes(database, table): # string[]
-    return [tupleData[1] for tupleData in columns_and_datatypes(database, table)], [tupleData[2] for tupleData in columns_and_datatypes(database, table)]
+    return [tupleData[1] for tupleData in columns_and_datatypes(database, table)]
 
 def columns_and_datatypes(database, table): # (name (string), datatype (string), size(int))
-    data = query(f'select COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+    data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
     return data
 
 def get_dimensions(database, table): # Tuple (entry count (int), key count (int))
@@ -108,15 +107,7 @@ def get_dimensions(database, table): # Tuple (entry count (int), key count (int)
 def read_table(database, table, header=True, types=True):
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
     if types:
-        types = list(datatypes(database, table))
-        typeList = []
-        for i in range(len(types[0])):
-            if (types[1][i] != None):
-                 typeList.append(types[0][i] + "(" + str(types[1][i]) + ")")
-            else:
-                typeList.append(types[0][i])
-        print(typeList)
-        rows.insert(0, typeList)
+        rows.insert(0, datatypes(database, table))
     if header:
         rows.insert(0, columns(database, table))
     return rows
