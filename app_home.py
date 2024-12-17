@@ -24,7 +24,6 @@ class Window(QMainWindow):
         self.layout = QGridLayout()
 
 class Tabs(QWidget):
-    
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
         self.layout = QVBoxLayout(self)
@@ -99,7 +98,10 @@ class Tabs(QWidget):
         return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
     def createDataTab(self, name, database_name, table_name, filepath, dictionary = tablist): #QWidget[]
-        tab = self.add(name, tab_type = "DataTab")
+        data = database.read_table(database_name, table_name)
+        self.createDataTabFromList(name, data, filepath, database_name, table_name, dictionary)
+
+        '''tab = self.add(name, tab_type = "DataTab")
         dictionary[name][3] = [database_name, table_name]
         label = QLabel(filepath)
 
@@ -128,8 +130,9 @@ class Tabs(QWidget):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
-    def createDataTabFromList(self, name, data, filepath): #QWidget[]
+    def createDataTabFromList(self, name, data, filepath, database_name, table_name, dictionary=tablist): #QWidget[]
         tab = self.add(name, tab_type = "DataTab")
+        dictionary[name][3] = [database_name, table_name]
         layoutGrid = QGridLayout()
 
         tab.setAutoFillBackground(True)
@@ -160,7 +163,6 @@ class Tabs(QWidget):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
-
     def createImportTab(self):
         if self.test("Import Data"): #Multiple tabs with the name name cannot exist
             self.delete("Import Data")
@@ -175,7 +177,6 @@ class Tabs(QWidget):
 
             content = ImportWizard(self, filepath)
             layoutGrid.addWidget(content)
-
 
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -240,13 +241,8 @@ class Tabs(QWidget):
             
             filepath = tab.findChildren(QLabel)[0].text()
             return((filepath, data, dictionary[name][3][0], dictionary[name][3][1], columns))
-
-
         else:
             print(f"Tab {name} is not a data tab, it is a {tab_type}")
-
-
-
 
 class MenuBar(QWidget):
     def __init__(self, parent):
@@ -389,8 +385,6 @@ class DataTab(QWidget):
         for y in range(0, dimensions[0]):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
-
-
     
 class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, currentDatabase="", currentTable=""):
