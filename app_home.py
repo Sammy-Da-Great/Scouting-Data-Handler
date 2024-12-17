@@ -126,12 +126,17 @@ class Tabs(QWidget):
 
         for y in range(0,dimensions[0]):
             for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
     def createDataTabFromList(self, name, data, filepath): #QWidget[]
         tab = self.add(name, tab_type = "DataTab")
+        layoutGrid = QGridLayout()
 
-        label = QLabel(filepath)
+        tab.setAutoFillBackground(True)
+        content = DataTab(self, data, filepath, tab)
+        layoutGrid.addWidget(content)
+
+        '''label = QLabel(filepath)
 
         dimensions = (len(data) - 1, len(data[0]))
 
@@ -153,7 +158,7 @@ class Tabs(QWidget):
 
         for y in range(0, dimensions[0]):
             for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
 
     def createImportTab(self):
@@ -357,6 +362,35 @@ class SaveFile(QWidget):
 
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
+
+class DataTab(QWidget):
+    def __init__(self, parent, data, filepath, tab):
+        super(QWidget, self).__init__(parent)
+        label = QLabel(filepath)
+
+        dimensions = (len(data) - 1, len(data[0]))
+
+        table = QTableWidget(*dimensions, tab)
+        table.setHorizontalHeaderLabels(data[0])
+        data.pop(0)
+
+        header_v_text = [str(row[0]) for row in data]
+        header_v_text[0] = "data type"
+        table.setVerticalHeaderLabels(header_v_text)
+
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layoutGrid.addWidget(label)
+        layoutGrid.addWidget(table)
+        tab.setAutoFillBackground(True)
+
+        for y in range(0, dimensions[0]):
+            for x in range(0, dimensions[1]):
+                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+
+
     
 class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, currentDatabase="", currentTable=""):
@@ -396,39 +430,42 @@ class ImportWizard(QWidget):
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
-        self.data = database.read_csv(filepath)
-        key_number = len(self.data[0])
+        if (filepath == '' or not(database.test(filepath))):
+            self.deleteSelf()
+        else:
+            self.data = database.read_csv(filepath)
+            key_number = len(self.data[0])
 
-        #table
-        self.table = QTableWidget(4, key_number)
-        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
-        self.layoutGrid.addWidget(self.table, 1, 1)
+            #table
+            self.table = QTableWidget(4, key_number)
+            self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
+            self.layoutGrid.addWidget(self.table, 1, 1)
 
-        #Checkboxes
-        self.sidebar = QVBoxLayout()
-        self.tab_name = QLineEdit("test")
-        self.format_label = QLabel("Format:")
-        self.key_check = QCheckBox('Keys')
-        self.type_check = QCheckBox('Types')
-        self.key_check.setChecked(True)
-        self.type_check.setChecked(True)
-        self.key_check.stateChanged.connect(self.updateTable)
-        self.type_check.stateChanged.connect(self.updateTable)
-        self.sidebar.addWidget(self.tab_name)
-        self.sidebar.addWidget(self.format_label)
-        self.sidebar.addWidget(self.key_check)
-        self.sidebar.addWidget(self.type_check)
+            #Checkboxes
+            self.sidebar = QVBoxLayout()
+            self.tab_name = QLineEdit("test")
+            self.format_label = QLabel("Format:")
+            self.key_check = QCheckBox('Keys')
+            self.type_check = QCheckBox('Types')
+            self.key_check.setChecked(True)
+            self.type_check.setChecked(True)
+            self.key_check.stateChanged.connect(self.updateTable)
+            self.type_check.stateChanged.connect(self.updateTable)
+            self.sidebar.addWidget(self.tab_name)
+            self.sidebar.addWidget(self.format_label)
+            self.sidebar.addWidget(self.key_check)
+            self.sidebar.addWidget(self.type_check)
 
-        self.tab_name.textChanged[str].connect(self.updateConfirm)
-        self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(self.confirm)
-        self.sidebar.addWidget(self.confirm_step_1)
+            self.tab_name.textChanged[str].connect(self.updateConfirm)
+            self.confirm_step_1 = QPushButton("Confirm")
+            self.confirm_step_1.clicked.connect(self.confirm)
+            self.sidebar.addWidget(self.confirm_step_1)
 
-        self.layoutGrid.addLayout(self.sidebar, 1, 0)
+            self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
-        self.setTable()
-        self.updateConfirm()
+            self.setTable()
+            self.updateConfirm()
     
     def setTable(self):
         for y in [0, 1]:
@@ -489,6 +526,9 @@ class ImportWizard(QWidget):
         print(data_buffer)
 
         self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath)
+        self.deleteSelf()
+
+    def deleteSelf(self):
         self.parent.delete("Import Data")
 
     def updateConfirm(self):
