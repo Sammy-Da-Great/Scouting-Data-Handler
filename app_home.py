@@ -187,7 +187,9 @@ class Tabs(QWidget):
     def saveCurrentTabAsCSV(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
-        database.write_csv(SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv"), self.currentTabData(parent=parent, keys=True)[1])
+        file = SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv")
+        if file != "":
+            database.write_csv(file, self.currentTabData(parent=parent, keys=True)[1])
     
     def saveCurrentTabSQL(self, parent = None):
         tabData = self.currentTabData(parent)
@@ -258,7 +260,9 @@ class MenuBar(QWidget):
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
         if action == "Data Export":
-            database.download_csv_from_database(SaveFile.file_save(self, file_name + ".csv"), database_name, table_name)
+            file = SaveFile.file_save(self, file_name + ".csv")
+            if file != "":
+                database.download_csv_from_database(file, database_name, table_name)
         elif action == "View":
             filepath = database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
             self.tabs.createDataTab(file_name, database_name, table_name, filepath)
