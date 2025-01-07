@@ -23,6 +23,7 @@ def query(query_text, input_data = ""): # cursor
         cursor.execute(query_text)
     else:
         cursor.execute(query_text, input_data)
+    mydb.commit()
     return cursor
 
 def get_all_databases():
@@ -48,6 +49,30 @@ def get_csv_from_database(file_name, database, table):
 
     return('tmp/' + file_name)
 
+def write_to_database(data, database, table, columnHeaders):
+    dataTypes = data[0]
+    del data[0]
+    createColumnQuery = ""
+    for i in range(len(columnHeaders)):
+        if (i < len(columnHeaders) - 1):
+            createColumnQuery += columnHeaders[i] + " " + dataTypes[i] + ", "
+        else:
+            createColumnQuery += columnHeaders[i] + " " + dataTypes[i]
+    query("DROP TABLE IF EXISTS " + database + "." + table + ";")
+    query("CREATE DATABASE IF NOT EXISTS " + database + ";")
+    query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
+    for row in data:
+        columnQuery = ""
+        valueQuery = ""
+        for i in range(len(columnHeaders)):
+            if (i < len(columnHeaders) - 1):
+                columnQuery += columnHeaders[i] + ", "
+                valueQuery += "\"" + row[i] + "\", "
+            else:
+                columnQuery += columnHeaders[i]
+                valueQuery += "\"" + row[i] + "\""
+        query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+
 def download_csv_from_database(filepath, database, table):
     rows = read_table(database, table)
 
@@ -69,9 +94,8 @@ def columns(database, table): # string[]
 def datatypes(database, table): # string[]
     return [tupleData[1] for tupleData in columns_and_datatypes(database, table)]
 
-def columns_and_datatypes(database, table): # (name (string), datatype (string))
-    data = query(f'select COLUMN_NAME, DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
-
+def columns_and_datatypes(database, table): # (name (string), datatype (string), size(int))
+    data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
     return data
 
 def get_dimensions(database, table): # Tuple (entry count (int), key count (int))
