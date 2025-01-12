@@ -1,7 +1,7 @@
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog, QComboBox
 import database
 import os
 
@@ -182,6 +182,25 @@ class Tabs(QWidget):
             content = ImportWizard(self, filepath)
             layoutGrid.addWidget(content)
 
+    def modifyTab(self):
+        if self.test("Modify Data"): #Multiple tabs with the name name cannot exist
+            self.delete("Modify Data")
+        name = self.tab_bar.tabText(self.tab_bar.currentIndex())
+        tab_type = self.tablist[name][2]
+
+        if tab_type == "DataTab":
+            data = self.currentTabData(keys=True)
+
+            content = ModifyWizard(self, data[1], data[2], self.getCurrentTab(), name)
+
+            tab = self.add("Modify Data", tab_type = "ModifyTab")
+            layoutGrid = QGridLayout()
+            tab.setLayout(layoutGrid)
+            tab.setAutoFillBackground(True)
+
+            layoutGrid.addWidget(content)
+
+
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -207,7 +226,7 @@ class Tabs(QWidget):
             if dialog.exec() == 1:
                 database.write_to_database(tabData[1], dialog.databaseInput.text(), dialog.tableInput.text(), tabData[4])
 
-    def currentTabData(self, parent = None, keys = False, dictionary=tablist):
+    def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
@@ -241,12 +260,12 @@ class Tabs(QWidget):
                         header_item = str(c+1)
                     
                     key_list.append(header_item)
-                print(data)
-                print(key_list)
+                #print(data)
+                #print(key_list)
                 data.insert(0, key_list)
             
             filepath = tab.findChildren(QLabel)[0].text()
-            return((filepath, data, dictionary[name][3][0], dictionary[name][3][1], columns))
+            return((filepath, data, dictionary[name][3][0], columns))
         else:
             print(f"Tab {name} is not a data tab, it is a {tab_type}")
 
@@ -336,7 +355,7 @@ class MenuBar(QWidget):
         #
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
         self.create_toolbar_button("Merge Tabs", editDropdown)
-        self.create_toolbar_button("Modify Keys", editDropdown)
+        self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
         #Database
         database_names = database.get_all_databases()
 
@@ -556,6 +575,74 @@ class ImportWizard(QWidget):
             item.setFlags(defaultFlags & Qt.ItemIsSelectable)
         else:
             item.setFlags(defaultFlags)
+
+class ModifyWizard(QWidget):
+    def __init__(self, parent, data, db_address, tab, name):
+        super(QWidget, self).__init__(parent)
+
+        self.layoutGrid = QGridLayout(self)
+        self.setLayout(self.layoutGrid)
+        self.setAutoFillBackground(True)
+
+        self.parent = parent
+
+        self.data = data
+        
+        self.sidebar = QWidget()
+        self.sidebar_layout = QVBoxLayout(self.sidebar)
+        
+        self.addItemButton = QPushButton("+")
+        self.removeItemButton = QPushButton("-")
+        self.addItemButton.setGeometry(100, 100, 100, 100)
+        self.removeItemButton.setGeometry(100, 100, 100, 100)
+        self.addItemButton.clicked.connect(lambda: self.addItem())
+        self.removeItemButton.clicked.connect(lambda: self.removeItem())
+
+        self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
+
+        self.layoutGrid.addWidget(self.sidebar, 1, 0)
+    
+    def addItem(self):
+        buffer = self.pairItems([QLineEdit(""), self.dropdownMenu(self.fetchPresets())])
+        self.sidebar_layout.addWidget(buffer)
+    
+    def removeItem(self):
+        if self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1) != None:
+            widget = self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget()
+            self.deleteWidget(widget)
+
+    def deleteWidget(self, widget):
+        import sip
+        widget.layout().parent().layout().removeWidget(widget)
+        sip.delete(widget)
+        self.widget = None
+
+    def removeLayout(self):
+        if layout is not None:
+         while layout.count():
+             item = layout.takeAt(0)
+             widget = item.widget()
+             if widget is not None:
+                 widget.setParent(None)
+             else:
+                 deleteItemsOfLayout(item.layout())
+
+    def pairItems(self, items):
+        pair = QWidget()
+        pair_layout = QHBoxLayout(pair)
+        for item in items:
+            pair_layout.addWidget(item)
+        return(pair)
+
+    def fetchPresets(self):
+        filenames = next(os.walk("ImportingData/ImportPresets/"), (None, None, []))[2]
+        return filenames
+
+    def dropdownMenu(self, data):
+        dropdown = QComboBox()
+        dropdown.addItems(data)
+        return(dropdown)
+
 
 def start_app():
     app = QApplication(sys.argv)
