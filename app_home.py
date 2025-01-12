@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog, QComboBox
 import database
 import os
+import ModifyData.ModifyPresetHandler as mph
 
 class Window(QMainWindow):
     """Main Window."""
@@ -593,15 +594,19 @@ class ModifyWizard(QWidget):
         
         self.addItemButton = QPushButton("+")
         self.removeItemButton = QPushButton("-")
-        self.addItemButton.setGeometry(100, 100, 100, 100)
-        self.removeItemButton.setGeometry(100, 100, 100, 100)
         self.addItemButton.clicked.connect(lambda: self.addItem())
         self.removeItemButton.clicked.connect(lambda: self.removeItem())
+
+        self.openPresetsButton = QPushButton("Open Presets Folder")
+        self.confirmButton = QPushButton("Confirm")
+        self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
 
         self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
 
         self.layoutGrid.addWidget(self.sidebar, 1, 0)
-    
+
+        self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.confirmButton]), 2, 0)
+
     def addItem(self):
         buffer = self.pairItems([QLineEdit(""), self.dropdownMenu(self.fetchPresets())])
         self.sidebar_layout.addWidget(buffer)
