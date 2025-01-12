@@ -5,4 +5,4 @@
 config/
 __pycache__/
 tmp/
-ImportingData/ImportPresets/
+ModifyData/ModifyPresets/*
