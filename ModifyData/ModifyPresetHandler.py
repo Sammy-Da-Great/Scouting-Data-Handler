@@ -9,14 +9,14 @@ def openFolder():
     os.startfile(preset_path)
 
 def createFile(name):
-    filepath = f"{preset_path}\\{name}.py"
+    filepath = f"{preset_path}\\{name}"
 
     with open(presetpreset,'r') as firstfile, open(filepath,'a') as secondfile:
         for line in firstfile:
             secondfile.write(line)
 
 def delFile(name):
-    filepath = f"{preset_path}\\{name}.py"
+    filepath = f"{preset_path}\\{name}"
     os.remove(filepath)
 
 def getParams(file): #list of strings
