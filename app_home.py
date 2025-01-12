@@ -97,17 +97,19 @@ class Tabs(QWidget):
             parent = self.tab_bar
         return(name in dictionary) # If name is in dictionary, return true. Else, return false.
 
-    def createDataTab(self, name, database_name, table_name, filepath, dictionary = tablist): #QWidget[]
-        data = database.read_table(database_name, table_name)
-        self.createDataTabFromList(name, data, filepath, database_name, table_name, dictionary)
+    def createDataTab(self, name, db_address, filepath, dictionary = tablist): #QWidget[]
+        database_name = db_address[0]
+        table_name = db_address[1]
+        data = database.read_table(db_address)
+        self.createDataTabFromList(name, data, filepath, db_address, dictionary)
 
         '''tab = self.add(name, tab_type = "DataTab")
-        dictionary[name][3] = [database_name, table_name]
+        dictionary[name][3] = [db_address]
         label = QLabel(filepath)
 
-        data = database.read_table(database_name, table_name)
+        data = database.read_table(db_address)
 
-        dimensions = list(database.get_dimensions(database_name, table_name))
+        dimensions = list(database.get_dimensions(db_address))
         dimensions[0] += 1
 
         table = QTableWidget(*dimensions, tab)
@@ -130,9 +132,11 @@ class Tabs(QWidget):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
-    def createDataTabFromList(self, name, data, filepath, database_name, table_name, dictionary=tablist): #QWidget[]
+    def createDataTabFromList(self, name, data, filepath, db_address, dictionary=tablist): #QWidget[]
+        database_name = db_address[0]
+        table_name = db_address[1]
         tab = self.add(name, tab_type = "DataTab")
-        dictionary[name][3] = [database_name, table_name]
+        dictionary[name][3] = [db_address]
         layoutGrid = QGridLayout()
 
         tab.setAutoFillBackground(True)
@@ -254,18 +258,20 @@ class MenuBar(QWidget):
         self.tabs = parent.tabs
 
     def set_open_table(self, button, target_database):
-        button.triggered.connect(lambda: self.open_table(button.text(), target_database, button.text(), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title()))
+        button.triggered.connect(lambda: self.open_table(button.text(), (target_database, button.text()), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title()))
 
-    def open_table(self, file_name, database_name, table_name, category, action):
+    def open_table(self, file_name, db_address, category, action):
+        database_name = db_address[0]
+        table_name = db_address[1]
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
         if action == "Data Export":
             file = SaveFile.file_save(self, file_name + ".csv")
             if file != "":
-                database.download_csv_from_database(file, database_name, table_name)
+                database.download_csv_from_database(file, db_address)
         elif action == "View":
-            filepath = database.get_csv_from_database(category + file_name + ".csv", database_name, table_name)
-            self.tabs.createDataTab(file_name, database_name, table_name, filepath)
+            filepath = database.get_csv_from_database(category + file_name + ".csv", db_address)
+            self.tabs.createDataTab(file_name, db_address, filepath)
         
         print(category + file_name + ".csv")
 
@@ -523,7 +529,7 @@ class ImportWizard(QWidget):
         print("Short Data:")
         print(data_buffer)
 
-        self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath)
+        self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath, (None, None))
         self.deleteSelf()
 
     def deleteSelf(self):
