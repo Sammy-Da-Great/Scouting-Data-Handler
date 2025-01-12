@@ -19,9 +19,14 @@ def delFile(name):
     filepath = f"{preset_path}\\{name}"
     os.remove(filepath)
 
-def getParams(file): #list of strings
+def getParams(file, custom = False): #list of strings
     import importlib
-    function_string = f'ModifyPresets.{file}.funct'
+    if custom == True:
+        presetFolder = "ModifyPresets"
+    else:
+        presetFolder = "DefaultModifyPresets"
+    
+    function_string = f'ModifyData.{presetFolder}.{os.path.splitext(file)[0]}.funct'
     mod_name, func_name = function_string.rsplit('.',1)
     mod = importlib.import_module(mod_name)
     funct = getattr(mod, func_name)

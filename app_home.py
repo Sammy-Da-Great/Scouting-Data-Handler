@@ -608,7 +608,7 @@ class ModifyWizard(QWidget):
         self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.confirmButton]), 2, 0)
 
     def addItem(self):
-        buffer = self.pairItems([QLineEdit(""), self.dropdownMenu(self.fetchPresets())])
+        buffer = self.pairItems([QLineEdit(""), PresetSelector(self)])
         self.sidebar_layout.addWidget(buffer)
     
     def removeItem(self):
@@ -622,16 +622,6 @@ class ModifyWizard(QWidget):
         sip.delete(widget)
         self.widget = None
 
-    def removeLayout(self):
-        if layout is not None:
-         while layout.count():
-             item = layout.takeAt(0)
-             widget = item.widget()
-             if widget is not None:
-                 widget.setParent(None)
-             else:
-                 deleteItemsOfLayout(item.layout())
-
     def pairItems(self, items):
         pair = QWidget()
         pair_layout = QHBoxLayout(pair)
@@ -639,14 +629,73 @@ class ModifyWizard(QWidget):
             pair_layout.addWidget(item)
         return(pair)
 
-    def fetchPresets(self):
-        filenames = next(os.walk("ModifyData/DefaultModifyPresets/"), (None, None, []))[2] + next(os.walk("ModifyData/ModifyPresets/"), (None, None, []))[2]
+    def fetchPresets(self, custom = False):
+        if custom:
+            filenames = next(os.walk("ModifyData/ModifyPresets/"), (None, None, []))[2]
+        else:
+            filenames = next(os.walk("ModifyData/DefaultModifyPresets/"), (None, None, []))[2]
         return filenames
 
     def dropdownMenu(self, data):
         dropdown = QComboBox()
         dropdown.addItems(data)
         return(dropdown)
+
+    def preset(self, keys):
+        presets = QWidget()
+        presets_layout = QHBoxLayout()
+        presets.setLayout()
+
+class PresetSelector(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__()
+        self.parent = parent
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+
+        self.custom_dropdown = self.parent.dropdownMenu(["Default", "Custom"])
+        self.custom_dropdown.currentTextChanged.connect(lambda: self.updateSelector())
+
+        self.selector_dropdown = self.parent.dropdownMenu(["None"])
+        self.selector_dropdown.currentTextChanged.connect(lambda: self.updateKeys())
+
+        self.keys = QWidget()
+        self.keys_layout = QHBoxLayout()
+        self.keys.setLayout(self.keys_layout)
+
+
+        self.layout.addWidget(self.custom_dropdown)
+        self.layout.addWidget(self.selector_dropdown)
+        self.layout.addWidget(self.keys)
+
+        self.updateSelector()
+
+    def manualUpdateSelector(self):
+        self.selector_dropdown.clear()
+        self.selector_dropdown.addItems(self.parent.fetchPresets(custom = (self.custom_dropdown.currentText() == "Custom")))
+
+    def updateSelector(self):
+        self.manualUpdateSelector()
+        self.updateKeys()
+
+    def updateKeys(self, delete = True):
+        if self.selector_dropdown.currentText() != "":
+            print(f"filename: {self.selector_dropdown.currentText()}")
+            keys_list = mph.getParams(self.selector_dropdown.currentText(), custom = (self.custom_dropdown.currentText() == "Custom"))
+
+            if delete == True:
+                for i in reversed(range(self.keys_layout.count())): 
+                    self.keys_layout.itemAt(i).widget().deleteLater()
+
+            for key in keys_list:
+                label = QLabel(f"{key}:")
+                dropdown = self.parent.dropdownMenu(self.parent.data[0])
+                group = self.parent.pairItems([label, dropdown])
+                self.keys_layout.addWidget(group)
+        
+
+        
+
 
 
 def start_app():
