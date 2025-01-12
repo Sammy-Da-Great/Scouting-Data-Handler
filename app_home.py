@@ -635,7 +635,7 @@ class ModifyWizard(QWidget):
         return(pair)
 
     def fetchPresets(self):
-        filenames = next(os.walk("ImportingData/ImportPresets/"), (None, None, []))[2]
+        filenames = next(os.walk("ImportingData/DefaultImportPresets/"), (None, None, []))[2] + next(os.walk("ImportingData/ImportPresets/"), (None, None, []))[2]
         return filenames
 
     def dropdownMenu(self, data):
