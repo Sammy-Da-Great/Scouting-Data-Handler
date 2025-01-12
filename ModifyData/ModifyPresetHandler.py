@@ -1,5 +1,6 @@
 import os
 import subprocess
+import inspect
 
 preset_path = "ModifyData\\ModifyPresets"
 presetpreset = "ModifyData\\ModifyPresetPreset.py"
@@ -17,3 +18,11 @@ def createFile(name):
 def delFile(name):
     filepath = f"{preset_path}\\{name}.py"
     os.remove(filepath)
+
+def getParams(file): #list of strings
+    import importlib
+    function_string = f'ModifyPresets.{file}.funct'
+    mod_name, func_name = function_string.rsplit('.',1)
+    mod = importlib.import_module(mod_name)
+    funct = getattr(mod, func_name)
+    return [tupleData[0] for tupleData in inspect.signature(funct).parameters]
