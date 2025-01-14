@@ -616,37 +616,40 @@ class ModifyWizard(QWidget):
 
     def loadConversion(self):
         name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
-        data = mph.readConversion(name)
-        if self.data[0] == data[0]:
-            #Load Conversion
-            widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-            for widget in widgets:
-                self.deleteWidget(widget)
+        if name != "":
+            data = mph.readConversion(name)
+            if self.data[0] == data[0]:
+                #Load Conversion
+                widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+                for widget in widgets:
+                    self.deleteWidget(widget)
 
-            rows = [data[i + 1] for i in range(len(data) - 1)]
-            for row in rows:
-                self.addItem(key = row[0], custom = row[1], preset = row[2], keylist = row [3])
-        else:
-            #Return exception
-            print("Exception")
+                rows = [data[i + 1] for i in range(len(data) - 1)]
+                for row in rows:
+                    keys = [row[i + 3] for i in range(len(row) - 3)]
+                    print(type(keys))
+                    self.addItem(key = row[0], custom = row[1], preset = row[2], keylist = keys)
+            else:
+                #Return exception
+                print("Exception")
 
     def saveConversion(self):
         name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
-
-        key_list = self.data[0]
-        presets = [key_list]
-        widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
-        for widget in widgets:
-            key = widget.itemAt(0).widget().text()
-            preset_group = widget.itemAt(1).widget().custom_dropdown.currentText()
-            preset_name = widget.itemAt(1).widget().selector_dropdown.currentText()
-            parameters = widget.itemAt(1).widget().getKeys()
-            presets.append([key, preset_group, preset_name, parameters])
-        mph.saveConversion(presets, name)
+        if name != "":
+            key_list = self.data[0]
+            presets = [key_list]
+            widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
+            for widget in widgets:
+                key = widget.itemAt(0).widget().text()
+                preset_group = widget.itemAt(1).widget().custom_dropdown.currentText()
+                preset_name = widget.itemAt(1).widget().selector_dropdown.currentText()
+                parameters = widget.itemAt(1).widget().getKeys()
+                presets.append([key, preset_group, preset_name, *parameters])
+            mph.saveConversion(presets, name)
 
 
     def addItem(self, key = "", custom = None, preset = None, keylist = None):
-        buffer = self.pairItems([QLineEdit(key), PresetSelector(self)])
+        buffer = self.pairItems([QLineEdit(key), PresetSelector(self, custom = custom, preset = preset, keylist = keylist)])
         self.sidebar_layout.addWidget(buffer)
     
     def removeItem(self):
@@ -691,6 +694,9 @@ class PresetSelector(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
+
+
+
         self.custom_dropdown = self.parent.dropdownMenu(["Default", "Custom"])
         if custom != None:
             self.custom_dropdown.setCurrentText(custom)
@@ -710,7 +716,7 @@ class PresetSelector(QWidget):
         self.layout.addWidget(self.selector_dropdown)
         self.layout.addWidget(self.keys)
 
-        self.updateSelector()
+        self.updateSelector(values=keylist)
 
     def getKeys(self):
         keys = []
@@ -724,9 +730,9 @@ class PresetSelector(QWidget):
         self.selector_dropdown.clear()
         self.selector_dropdown.addItems(self.parent.fetchPresets(custom = (self.custom_dropdown.currentText() == "Custom")))
 
-    def updateSelector(self):
+    def updateSelector(self, values = None):
         self.manualUpdateSelector()
-        self.updateKeys()
+        self.updateKeys(values = values)
 
     def updateKeys(self, delete = True, values = None):
         if self.selector_dropdown.currentText() != "":
@@ -737,6 +743,8 @@ class PresetSelector(QWidget):
                 for i in reversed(range(self.keys_layout.count())): 
                     self.keys_layout.itemAt(i).widget().deleteLater()
 
+
+            
             if values == None:
                 values = []
                 for key in keys_list:
