@@ -1,9 +1,11 @@
 import os
 import subprocess
 import inspect
+import database as db #Needs to be run from main folder
 
 preset_path = "ModifyData\\ModifyPresets"
 presetpreset = "ModifyData\\ModifyPresetPreset.py"
+conversion_path = "ModifyData\\ConversionPresets\\"
 
 def openFolder(): 
     os.startfile(preset_path)
@@ -31,3 +33,9 @@ def getParams(file, custom = False): #list of strings
     mod = importlib.import_module(mod_name)
     funct = getattr(mod, func_name)
     return [tupleData[0] for tupleData in inspect.signature(funct).parameters]
+
+def saveConversion(data, name):
+    db.write_csv(f"{name}", data)
+
+def readConversion(name):
+    return db.read_csv(f"{name}")

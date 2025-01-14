@@ -6,3 +6,4 @@ config/
 __pycache__/
 tmp/
 ModifyData/ModifyPresets/*
+ModifyData/ConversionPresets/*
