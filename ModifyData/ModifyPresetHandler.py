@@ -36,6 +36,9 @@ def runFunct(parameters, file, custom = False):
     return(funct(*parameters))
     
 def getFunct(file, custom = False):
+    return(getModule(file, custom)[1])
+
+def getModule(file, custom = False):
     import importlib
     if custom == True:
         presetFolder = "ModifyPresets"
@@ -46,7 +49,7 @@ def getFunct(file, custom = False):
     mod_name, func_name = function_string.rsplit('.',1)
     mod = importlib.import_module(mod_name)
     funct = getattr(mod, func_name)
-    return(funct)
+    return((mod, funct))
 
 def runConversion(convert_data, data):
     if convert_data[0] == data[0]:
@@ -55,11 +58,14 @@ def runConversion(convert_data, data):
             lookup[key] = len(lookup)
 
         convert_keys = []
+        convert_data_types = []
         for row in convert_data[1:]:
             convert_keys.append(row[0])
+            convert_data_types.append(getModule(row[2], row[1] == "Custom")[0].data_type)
             
         rows = []
         rows.append(convert_keys)
+        rows.append(convert_data_types)
 
         for data_row in data[2:]:
             row = []

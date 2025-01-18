@@ -620,6 +620,7 @@ class ModifyWizard(QWidget):
 
     def saveData(self, name, data):
         self.parent.createDataTabFromList(name, data, None, (None, None))
+        self.parent.delete("Modify Data")
 
 
     def loadConversion(self):

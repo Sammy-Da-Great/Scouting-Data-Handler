@@ -1,2 +1,4 @@
+data_type = "smallint unsigned"
+
 def funct(a, b):
-    print(a)
+    return(a + b)
