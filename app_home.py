@@ -597,9 +597,12 @@ class ModifyWizard(QWidget):
         self.addItemButton.clicked.connect(lambda: self.addItem())
         self.removeItemButton.clicked.connect(lambda: self.removeItem())
 
+        self.nameInput = QLineEdit()
+
         self.openPresetsButton = QPushButton("Open Presets Folder")
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
         self.confirmButton = QPushButton("Confirm")
+        self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data)))
 
         self.saveConversionButton = QPushButton("Save Conversion")
         self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
@@ -609,10 +612,15 @@ class ModifyWizard(QWidget):
         
 
         self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
+        self.layoutGrid.addWidget(self.pairItems([QLabel("Name:"), self.nameInput]), 1, 0)
 
-        self.layoutGrid.addWidget(self.sidebar, 1, 0)
+        self.layoutGrid.addWidget(self.sidebar, 2, 0)
 
-        self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 2, 0)
+        self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 3, 0)
+
+    def saveData(self, name, data):
+        self.parent.createDataTabFromList(name, data, None, (None, None))
+
 
     def loadConversion(self):
         name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
@@ -636,16 +644,21 @@ class ModifyWizard(QWidget):
     def saveConversion(self):
         name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
         if name != "":
-            key_list = self.data[0]
-            presets = [key_list]
-            widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
-            for widget in widgets:
-                key = widget.itemAt(0).widget().text()
-                preset_group = widget.itemAt(1).widget().custom_dropdown.currentText()
-                preset_name = widget.itemAt(1).widget().selector_dropdown.currentText()
-                parameters = widget.itemAt(1).widget().getKeys()
-                presets.append([key, preset_group, preset_name, *parameters])
+            presets = self.getConversion()
             mph.saveConversion(presets, name)
+
+    def getConversion(self):
+        key_list = self.data[0]
+        presets = [key_list]
+        widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
+        for widget in widgets:
+            key = widget.itemAt(0).widget().text()
+            preset_group = widget.itemAt(1).widget().custom_dropdown.currentText()
+            preset_name = widget.itemAt(1).widget().selector_dropdown.currentText()
+            parameters = widget.itemAt(1).widget().getKeys()
+            presets.append([key, preset_group, preset_name, *parameters])
+        
+        return(presets)
 
 
     def addItem(self, key = "", custom = None, preset = None, keylist = None):
