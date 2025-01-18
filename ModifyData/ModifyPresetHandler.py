@@ -23,7 +23,7 @@ def delFile(name):
 
 def getParams(file, custom = False): #list of strings
     funct = getFunct(file, custom)
-    return [tupleData[0] for tupleData in inspect.signature(funct).parameters]
+    return inspect.signature(funct).parameters
 
 def saveConversion(convert_data, name):
     db.write_csv(f"{name}", convert_data)

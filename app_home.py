@@ -18,7 +18,7 @@ class Window(QMainWindow):
         self.tabs = Tabs(self)
         self.setCentralWidget(self.tabs)
 
-        test_tab = self.tabs.add("test")
+        #test_tab = self.tabs.add("test")
 
         self.menubar = MenuBar(self)
 
