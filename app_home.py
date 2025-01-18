@@ -32,7 +32,7 @@ class Window(QMainWindow):
     def __init__(self, parent=None):
         """Initializer."""
         super().__init__(parent)
-        self.setWindowTitle("Python Menus & Toolbars")
+        self.setWindowTitle("Scouting Data Handler")
         self.resize(1000, 500)
         self.showMaximized()
 
