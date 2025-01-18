@@ -1,7 +1,28 @@
+'''
+Scouting Data Handler, a custom SQL interface
+Copyright (C) 2025  Samuel Husmann
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see https://www.gnu.org/licenses/.
+'''
+
+
+
+
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog, QComboBox
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog, QComboBox, QScrollArea
 import database
 import os
 import ModifyData.ModifyPresetHandler as mph
@@ -18,7 +39,6 @@ class Window(QMainWindow):
         self.tabs = Tabs(self)
         self.setCentralWidget(self.tabs)
 
-        #test_tab = self.tabs.add("test")
 
         self.menubar = MenuBar(self)
 
@@ -201,6 +221,21 @@ class Tabs(QWidget):
 
             layoutGrid.addWidget(content)
 
+    def createLicenseTab(self):
+        if self.test("License"): #Multiple tabs with the name name cannot exist
+            self.delete("License")
+        
+
+        content = ScrollLabel()
+        text = database.get_license()
+        content.setText(text)
+
+        tab = self.add("License", tab_type = "License")
+        layoutGrid = QGridLayout()
+        tab.setLayout(layoutGrid)
+        tab.setAutoFillBackground(True)
+
+        layoutGrid.addWidget(content)
 
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -371,6 +406,9 @@ class MenuBar(QWidget):
         import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
         
         self.create_toolbar_button("Settings", database_dropdown)
+
+        helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
+        self.create_toolbar_button("License", helpDropdown, lambda: self.tabs.createLicenseTab())
         #
 
 class SaveFile(QWidget):
@@ -772,6 +810,38 @@ class PresetSelector(QWidget):
                 group = self.parent.pairItems([label, dropdown])
                 self.keys_layout.addWidget(group)
 
+class ScrollLabel(QScrollArea):
+
+    # constructor
+    def __init__(self, *args, **kwargs):
+        QScrollArea.__init__(self, *args, **kwargs)
+
+        # making widget resizable
+        self.setWidgetResizable(True)
+
+        # making qwidget object
+        content = QWidget(self)
+        self.setWidget(content)
+
+        # vertical box layout
+        lay = QVBoxLayout(content)
+
+        # creating label
+        self.label = QLabel(content)
+
+        # setting alignment to the text
+        self.label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # making label multi-line
+        self.label.setWordWrap(True)
+
+        # adding label to the layout
+        lay.addWidget(self.label)
+
+    # the setText method
+    def setText(self, text):
+        # setting text to the label
+        self.label.setText(text)
 
 def start_app():
     app = QApplication(sys.argv)

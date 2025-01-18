@@ -1,3 +1,11 @@
+'''
+Scouting Data Handler, a custom SQL interface
+Copyright (C) 2025  Samuel Husmann
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see https://www.gnu.org/licenses/.
+'''
+
 import mysql.connector
 import config_maker
 
@@ -145,3 +153,11 @@ def write_csv(filepath, data):
 
 def test(filepath):
     return(os.path.isfile(filepath))
+
+def get_license():
+    text = ""
+    with open("LICENSE", 'r') as stream:
+        lines = stream.readlines()
+        text = "".join(lines)
+    return(text)
+    
