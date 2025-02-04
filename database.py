@@ -60,30 +60,34 @@ def get_csv_from_database(file_name, db_address):
     return('tmp/' + file_name)
 
 def write_to_database(data, db_address, columnHeaders):
-    database = db_address[0]
-    table = db_address[1]
-    dataTypes = data[0]
-    del data[0]
-    createColumnQuery = ""
-    for i in range(len(columnHeaders)):
-        if (i < len(columnHeaders) - 1):
-            createColumnQuery += columnHeaders[i] + " " + dataTypes[i] + ", "
-        else:
-            createColumnQuery += columnHeaders[i] + " " + dataTypes[i]
-    query("DROP TABLE IF EXISTS " + database + "." + table + ";")
-    query("CREATE DATABASE IF NOT EXISTS " + database + ";")
-    query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
-    for row in data:
-        columnQuery = ""
-        valueQuery = ""
+    if (db_address[0] != None) or (db_address[1] != None):
+        database = db_address[0]
+        table = db_address[1]
+        dataTypes = [dataType.lstrip() for dataType in data[0]]
+        data.pop(0)
+        createColumnQuery = ""
         for i in range(len(columnHeaders)):
             if (i < len(columnHeaders) - 1):
-                columnQuery += columnHeaders[i] + ", "
-                valueQuery += "\"" + row[i] + "\", "
+                createColumnQuery += columnHeaders[i] + " " + dataTypes[i] + ", "
             else:
-                columnQuery += columnHeaders[i]
-                valueQuery += "\"" + row[i] + "\""
-        query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+                createColumnQuery += columnHeaders[i] + " " + dataTypes[i]
+        query("DROP TABLE IF EXISTS " + database + "." + table + ";")
+        query("CREATE DATABASE IF NOT EXISTS " + database + ";")
+        query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
+        for data_row in data:
+            row = [data_item.lstrip() for data_item in data_row]
+            columnQuery = ""
+            valueQuery = ""
+            for i in range(len(columnHeaders)):
+                if (i < len(columnHeaders) - 1):
+                    columnQuery += columnHeaders[i] + ", "
+                    valueQuery += "\"" + row[i] + "\", "
+                else:
+                    columnQuery += columnHeaders[i]
+                    valueQuery += "\"" + row[i] + "\""
+            query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+    else:
+        print(f'{db_address} is not a valid db_address')
 
 def download_csv_from_database(filepath, db_address):
     database = db_address[0]

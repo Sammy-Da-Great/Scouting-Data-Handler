@@ -22,7 +22,7 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 import sys
 from config_maker import read_global_config as config
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QAction, QTabWidget, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QHeaderView, QSizePolicy, QGridLayout, QTableWidgetItem, QHBoxLayout, QCheckBox, QLineEdit, QLineEdit, QDialogButtonBox, QDialog, QComboBox, QScrollArea
+from PyQt5.QtWidgets import *
 import database
 import os
 import ModifyData.ModifyPresetHandler as mph
@@ -203,6 +203,22 @@ class Tabs(QWidget):
             content = ImportWizard(self, filepath)
             layoutGrid.addWidget(content)
 
+    def createConcatTab(self):
+        if self.test("Merge Data"): #Multiple tabs with the name name cannot exist
+            self.delete("Merge Data")
+
+        name = self.tab_bar.tabText(self.tab_bar.currentIndex())
+        tab_type = self.tablist[name][2]
+        if tab_type == "DataTab":
+
+            tab = self.add("Merge Data", tab_type = "ConcatTab")
+            layoutGrid = QGridLayout()
+            tab.setLayout(layoutGrid)
+            tab.setAutoFillBackground(True)
+
+            content = ConcatWizard(self)
+            layoutGrid.addWidget(content)
+
     def modifyTab(self):
         if self.test("Modify Data"): #Multiple tabs with the name name cannot exist
             self.delete("Modify Data")
@@ -251,22 +267,36 @@ class Tabs(QWidget):
             database.write_csv(file, self.currentTabData(parent=parent, keys=True)[1])
     
     def saveCurrentTabSQL(self, parent = None):
-        tabData = self.currentTabData(parent)
-        if tabData != None:
-            database.write_to_database(tabData[1], tabData[2], tabData[3], tabData[4])
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+
+        tabData = self.currentTabData(parent, keys=False)
+        keys = self.currentTabData(parent, keys=True)[1][0]
+        if tabData[2] == (None, None):
+            self.saveCurrentTabAsSQL(parent=parent)
+        else:
+            if tabData[1] != None:
+                database.write_to_database(tabData[1], tabData[2], keys)
 
     def saveCurrentTabAsSQL(self, parent = None):
         tabData = self.currentTabData(parent)
+        keys = self.currentTabData(parent, keys=True)[1][0]
+        
         if tabData != None:
-            dialog = SaveSQLAsDialog(parent, tabData[2], tabData[3])
+            dialog = SaveSQLAsDialog(parent, tabData[2])
             if dialog.exec() == 1:
-                database.write_to_database(tabData[1], dialog.databaseInput.text(), dialog.tableInput.text(), tabData[4])
+                database.write_to_database(tabData[1], (dialog.databaseInput.text(), dialog.tableInput.text()), keys)
 
     def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
         name = parent.tabText(index)
+        return(self.tabData(name, parent, keys, dictionary))
+
+    def tabData(self, name, parent = None, keys = False, dictionary=tablist):
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
         tab_type = self.tablist[name][2]
         tab = self.tablist[name][0]
 
@@ -390,7 +420,7 @@ class MenuBar(QWidget):
         
         #
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
-        self.create_toolbar_button("Merge Tabs", editDropdown)
+        self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.tabs.createConcatTab())
         self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
         #Database
         database_names = database.get_all_databases()
@@ -455,8 +485,10 @@ class DataTab(QWidget):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
     
 class SaveSQLAsDialog(QDialog):
-    def __init__(self, parent=None, currentDatabase="", currentTable=""):
+    def __init__(self, parent=None, db_address=(None, None)):
         super().__init__(parent)
+        currentDatabase = db_address[0]
+        currentTable = db_address[1]
         self.setWindowTitle("Save Current Tab as...")
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -810,6 +842,91 @@ class PresetSelector(QWidget):
                 group = self.parent.pairItems([label, dropdown])
                 self.keys_layout.addWidget(group)
 
+class ConcatWizard(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__(parent)
+
+        self.layoutGrid = QGridLayout(self)
+        self.setLayout(self.layoutGrid)
+        self.setAutoFillBackground(True)
+
+        self.parent = parent
+
+
+        #
+        self.sidebar = QVBoxLayout()
+        self.tab_name = QLineEdit("test")
+        self.format_selector = QWidget()
+        self.format_selector_layout = QHBoxLayout()
+        self.format_selector.setLayout(self.format_selector_layout)
+        self.format_label = QLabel("Format:")
+
+        self.format = self.dropdownMenu(self.dataTabs())
+        self.sidebar.addWidget(self.tab_name)
+        self.sidebar.addWidget(self.format_selector)
+        self.format_selector_layout.addWidget(self.format_label)
+        self.format_selector_layout.addWidget(self.format)
+
+        self.possible_items = QListDragAndDrop()
+        self.possible_items.setFlow(QListView.TopToBottom)
+        self.possible_items.setWrapping(False)
+        self.possible_items.setResizeMode(QListView.Adjust)
+        self.layoutGrid.addWidget(self.possible_items, 1, 1)
+
+        self.chosen_items = QListDragAndDrop()
+        self.chosen_items.setFlow(QListView.TopToBottom)
+        self.chosen_items.setWrapping(False)
+        self.chosen_items.setResizeMode(QListView.Adjust)
+        self.layoutGrid.addWidget(self.chosen_items, 1, 2)
+
+        self.format.currentTextChanged.connect(lambda: self.updateList())
+        
+
+        #self.tab_name.textChanged[str].connect(self.updateConfirm)
+        self.confirm_step_1 = QPushButton("Confirm")
+        self.confirm_step_1.clicked.connect(lambda: self.confirm())
+        #self.confirm_step_1.clicked.connect(self.confirm)
+        self.sidebar.addWidget(self.confirm_step_1)
+
+        self.layoutGrid.addLayout(self.sidebar, 1, 0)
+
+    def confirm(self):
+        formatList = self.parent.tabData(self.format.currentText(), keys=True)[1][0:1]
+
+        data = formatList
+        for tab_index in range(self.chosen_items.count()):
+            tab_name = self.chosen_items.item(tab_index).text()
+            tab_data = self.parent.tabData(tab_name, keys=False)[1][1:]
+            data.extend(tab_data)
+
+        self.parent.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
+
+
+
+    def updateList(self):
+        self.possible_items.clear()
+        self.chosen_items.clear()
+        self.possible_items.addItems(self.dataTabs(self.format.currentText()))
+
+    def dropdownMenu(self, data):
+        dropdown = QComboBox()
+        dropdown.addItems(data)
+        return(dropdown)
+
+    def dataTabs(self, formatTab = None):
+        tabs = [*self.parent.tablist]
+        tabs = list(filter((lambda tabname: self.parent.tablist[tabname][2] == "DataTab"), tabs))
+        print(tabs)
+        if formatTab != None:
+            tabs = list(map(lambda tabname: (tabname, self.data(tabname)[0]), tabs))
+            print(tabs)
+            tabs = list(filter((lambda tab: tab[1] == self.data(formatTab)[0]), tabs))
+            tabs = [tab[0] for tab in tabs]
+        return(tabs)
+
+    def data(self, name):
+        return(self.parent.tabData(name, keys=True)[1])
+
 class ScrollLabel(QScrollArea):
 
     # constructor
@@ -842,6 +959,21 @@ class ScrollLabel(QScrollArea):
     def setText(self, text):
         # setting text to the label
         self.label.setText(text)
+
+class QListDragAndDrop(QListWidget):
+   def __init__(self):
+       super(QListDragAndDrop, self).__init__()
+       self.setFrameShape(QFrame.WinPanel)
+       self.setFrameShadow(QFrame.Raised)
+       self.setDragEnabled(True)
+       self.setDragDropMode(QAbstractItemView.DragDrop)
+       self.setDefaultDropAction(Qt.MoveAction)
+       self.setSelectionMode(QAbstractItemView.MultiSelection)
+       self.setMovement(QListView.Snap)
+       self.setProperty("isWrapping", True)
+       self.setWordWrap(True)
+       self.setSortingEnabled(True)
+       self.setAcceptDrops(True)
 
 def start_app():
     app = QApplication(sys.argv)
