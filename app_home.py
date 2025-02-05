@@ -272,20 +272,32 @@ class Tabs(QWidget):
 
         tabData = self.currentTabData(parent, keys=False)
         keys = self.currentTabData(parent, keys=True)[1][0]
+        data = tabData[1]
+        db_address = tabData[2]
+
         if tabData[2] == (None, None):
             self.saveCurrentTabAsSQL(parent=parent)
         else:
-            if tabData[1] != None:
-                database.write_to_database(tabData[1], tabData[2], keys)
+            self.saveTabDataSQL(data, db_address, keys)
 
     def saveCurrentTabAsSQL(self, parent = None):
         tabData = self.currentTabData(parent)
-        keys = self.currentTabData(parent, keys=True)[1][0]
         
         if tabData != None:
             dialog = SaveSQLAsDialog(parent, tabData[2])
             if dialog.exec() == 1:
-                database.write_to_database(tabData[1], (dialog.databaseInput.text(), dialog.tableInput.text()), keys)
+                keys = self.currentTabData(parent, keys=True)[1][0]
+                data = tabData[1]
+                db_address = (dialog.databaseInput.text(), dialog.tableInput.text())
+
+                self.saveTabDataSQL(data, db_address, keys)
+
+    def saveTabDataSQL(self, data, db_address, keys):
+        if (db_address != (None, None)) and (data != None) and (keys != None):
+            database.write_to_database(data, db_address, keys)
+
+            self.parent.menubar.updateMenuBar()
+
 
     def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -409,6 +421,7 @@ class MenuBar(QWidget):
 
     def _createMenuBar(self):
         menuBar = self.parent.menuBar()
+        menuBar.clear()
 
         #File
         file_dropdown = self.create_toolbar_dropdown("File", menuBar)
@@ -440,6 +453,9 @@ class MenuBar(QWidget):
         helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
         self.create_toolbar_button("License", helpDropdown, lambda: self.tabs.createLicenseTab())
         #
+
+    def updateMenuBar(self):
+        self._createMenuBar()
 
 class SaveFile(QWidget):
     def __init__(self, parent):
