@@ -99,7 +99,7 @@ def download_csv_from_database(filepath, db_address):
 def column_data(db_address, column_name): # Returns json.loads data
     database = db_address[0]
     table = db_address[1]
-    query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' and COLUMN_NAME=\'{column_name}\'')
+    query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' and COLUMN_NAME=\'{column_name}\' ORDER BY ORDINAL_POSITION')
     dict_output = dict()
 
     columns = [column[0] for column in query_output.description]
@@ -121,7 +121,7 @@ def datatypes(db_address): # string[]
 def columns_and_datatypes(db_address): # (name (string), datatype (string), size(int))
     database = db_address[0]
     table = db_address[1]
-    data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\'').fetchall()
+    data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' ORDER BY ORDINAL_POSITION').fetchall()
     return data
 
 def get_dimensions(db_address): # Tuple (entry count (int), key count (int))
@@ -135,6 +135,7 @@ def get_dimensions(db_address): # Tuple (entry count (int), key count (int))
 def read_table(db_address, header=True, types=True):
     database = db_address[0]
     table = db_address[1]
+
     rows = query("SELECT * FROM " + database + "." + table + ";").fetchall()
     if types:
         rows.insert(0, datatypes(db_address))
