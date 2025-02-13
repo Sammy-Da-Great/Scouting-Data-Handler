@@ -298,7 +298,6 @@ class Tabs(QWidget):
 
             self.parent.menubar.updateMenuBar()
 
-
     def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -370,7 +369,7 @@ class MenuBar(QWidget):
             filepath = database.get_csv_from_database(category + file_name + ".csv", db_address)
             self.tabs.createDataTab(file_name, db_address, filepath)
         
-        print(category + file_name + ".csv")
+        #print(category + file_name + ".csv")
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -592,7 +591,7 @@ class ImportWizard(QWidget):
                 
     def updateTable(self):
         rowIndex = 0
-        print("update")
+        #print("update")
         if self.key_check.isChecked() == True:
             for x in range(0, len(self.data[0])):
                 self.table.item(0, x).setText(str(self.data[rowIndex][x]))
@@ -618,24 +617,31 @@ class ImportWizard(QWidget):
             self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
         
     def confirm(self):
-        print("Step 1 complete, loading step 2")
         keys = []
         types = []
         for x in range(0, len(self.data[0])):
-            keys.append(self.table.item(0, x).text())
-            types.append(self.table.item(1, x).text())
+            keys.append(self.table.item(0, x).text().lstrip())
+            types.append(self.table.item(1, x).text().lstrip())
         
-        data_buffer = self.data
+        data_buffer = []
+        for row in self.data:
+            row_buffer = []
+            for item in row:
+                row_buffer.append(item.lstrip())
+            data_buffer.append(row_buffer)
+
         if self.key_check.isChecked():
             data_buffer.pop(0)
         if self.type_check.isChecked():
             data_buffer.pop(0)
         
-        print(self.data)
-        print("Short Data:")
-        print(data_buffer)
+        #print(self.data)
+        #print("Short Data:")
+        #print(data_buffer)
 
-        self.parent.createDataTabFromList(self.tab_name.text(), [keys, types, *data_buffer], self.filepath, (None, None))
+        data_confirmed = [keys, types, *data_buffer]
+
+        self.parent.createDataTabFromList(self.tab_name.text(), data_confirmed, self.filepath, (None, None))
         self.deleteSelf()
 
     def deleteSelf(self):
@@ -722,7 +728,6 @@ class ModifyWizard(QWidget):
                 rows = [data[i + 1] for i in range(len(data) - 1)]
                 for row in rows:
                     keys = [row[i + 3] for i in range(len(row) - 3)]
-                    print(type(keys))
                     self.addItem(key = row[0], custom = row[1], preset = row[2], keylist = keys)
             else:
                 #Return exception
@@ -906,16 +911,43 @@ class ConcatWizard(QWidget):
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
-    def confirm(self):
-        formatList = self.parent.tabData(self.format.currentText(), keys=True)[1][0:1]
+        self.updateList()
 
-        data = formatList
+    def confirm(self):
+        formatList = self.parent.tabData(self.format.currentText(), keys=True)[1][0:2]
+        print(f'name of format: {self.format.currentText()}')
+        print(f'format: {formatList}')
+
+        data = []
+
         for tab_index in range(self.chosen_items.count()):
             tab_name = self.chosen_items.item(tab_index).text()
             tab_data = self.parent.tabData(tab_name, keys=False)[1][1:]
             data.extend(tab_data)
 
+
+        # REMOVE DUPLICATES
+
+        print(f'before dupe removal:{data}')
+        data = self.uniqueData(data)
+        print(f'after dupe removal:{data}')
+        #
+
+        data = [*formatList, *data]
+        print(f'after keys: {data}')
+
         self.parent.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
+        self.deleteSelf()
+
+    def uniqueData(self, data):
+        data_dict = {}
+        for row in data:
+            data_dict[row[0]] = row
+        return(list(data_dict.values()))
+
+    def deleteSelf(self):
+        self.parent.delete("Merge Data")
+
 
 
 
@@ -932,10 +964,8 @@ class ConcatWizard(QWidget):
     def dataTabs(self, formatTab = None):
         tabs = [*self.parent.tablist]
         tabs = list(filter((lambda tabname: self.parent.tablist[tabname][2] == "DataTab"), tabs))
-        print(tabs)
         if formatTab != None:
             tabs = list(map(lambda tabname: (tabname, self.data(tabname)[0]), tabs))
-            print(tabs)
             tabs = list(filter((lambda tab: tab[1] == self.data(formatTab)[0]), tabs))
             tabs = [tab[0] for tab in tabs]
         return(tabs)
