@@ -7,6 +7,7 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
 data_type = "varchar(45)"
+constants = []
 
 def funct(a, b):
     return (a + b)

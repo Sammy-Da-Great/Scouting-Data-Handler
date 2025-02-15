@@ -6,8 +6,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-data_type = "varchar(45)"
-constants = []
+data_type = "smallint unsigned"
+constants = ["values", "points"]
 
-def funct(string):
-    return (string)
+def funct(dropdown, values, points):
+    conversion = dict(zip(values.split(","), points.split(",")))
+    return(conversion[dropdown])

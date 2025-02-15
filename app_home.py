@@ -694,7 +694,7 @@ class ModifyWizard(QWidget):
         self.openPresetsButton = QPushButton("Open Presets Folder")
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
         self.confirmButton = QPushButton("Confirm")
-        self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data)))
+        self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
 
         self.saveConversionButton = QPushButton("Save Conversion")
         self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
@@ -719,16 +719,16 @@ class ModifyWizard(QWidget):
         name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
         if name != "":
             data = mph.readConversion(name)
-            if self.data[0] == data[0]:
-                #Load Conversion
+            if self.data[0] == data['format']:
+                #Delete Current Conversion
                 widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
                 for widget in widgets:
                     self.deleteWidget(widget)
 
-                rows = [data[i + 1] for i in range(len(data) - 1)]
-                for row in rows:
-                    keys = [row[i + 3] for i in range(len(row) - 3)]
-                    self.addItem(key = row[0], custom = row[1], preset = row[2], keylist = keys)
+                #Load Conversion
+                for row in data['rows']:
+                    self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
+                print(data['rows'])
             else:
                 #Return exception
                 print("Exception")
@@ -739,17 +739,29 @@ class ModifyWizard(QWidget):
             presets = self.getConversion()
             mph.saveConversion(presets, name)
 
-    def getConversion(self):
+    def getConversion(self, constants = False):
         key_list = self.data[0]
         presets = [key_list]
         widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
         for widget in widgets:
             key = widget.itemAt(0).widget().text()
-            preset_group = widget.itemAt(1).widget().custom_dropdown.currentText()
-            preset_name = widget.itemAt(1).widget().selector_dropdown.currentText()
-            parameters = widget.itemAt(1).widget().getKeys()
-            presets.append([key, preset_group, preset_name, *parameters])
-        
+            values = widget.itemAt(1).widget().getValues()
+            preset_group = values[0]
+            preset_name = values[1]
+            keys = values[2]
+            if constants:
+                presets.append([key, preset_group, preset_name, *keys])
+            else:
+                presets.append([key, preset_group, preset_name, *keys])
+        return(presets)
+
+    def getConstants(self):
+        key_list = self.data[0]
+        presets = [key_list]
+        widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
+        for widget in widgets:
+            constants = widget.itemAt(1).widget().getConstants()
+            presets.append(constants)
         return(presets)
 
 
@@ -799,8 +811,9 @@ class PresetSelector(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
+        self.preset_default = preset
 
-
+        print(f'recieved: {str([custom, preset, keylist])}')
 
         self.custom_dropdown = self.parent.dropdownMenu(["Default", "Custom"])
         if custom != None:
@@ -808,8 +821,6 @@ class PresetSelector(QWidget):
         self.custom_dropdown.currentTextChanged.connect(lambda: self.updateSelector())
 
         self.selector_dropdown = self.parent.dropdownMenu(["None"])
-        if preset != None:
-            self.selector_dropdown.setCurrentText(preset)
         self.selector_dropdown.currentTextChanged.connect(lambda: self.updateKeys())
 
         self.keys = QWidget()
@@ -825,15 +836,24 @@ class PresetSelector(QWidget):
 
     def getKeys(self):
         keys = []
-        dropdowns = (self.keys_layout.itemAt(i).widget().layout().itemAt(1).widget() for i in range(self.keys_layout.count()))
-        for drop in dropdowns:
-            keys.append(drop.currentText())
+        items = (self.keys_layout.itemAt(i).widget() for i in range(self.keys_layout.count()))
+        for item in items:
+            keys.append(item.getValue())
+        return(keys)
+
+    def getConstants(self):
+        keys = []
+        items = (self.keys_layout.itemAt(i).widget() for i in range(self.keys_layout.count()))
+        for item in items:
+            keys.append(item.constant)
         return(keys)
 
 
     def manualUpdateSelector(self):
         self.selector_dropdown.clear()
         self.selector_dropdown.addItems(self.parent.fetchPresets(custom = (self.custom_dropdown.currentText() == "Custom")))
+        if self.preset_default != None:
+            self.selector_dropdown.setCurrentText(self.preset_default)
 
     def updateSelector(self, values = None):
         self.manualUpdateSelector()
@@ -842,26 +862,83 @@ class PresetSelector(QWidget):
     def updateKeys(self, delete = True, values = None):
         if self.selector_dropdown.currentText() != "":
             #print(f"filename: {self.selector_dropdown.currentText()}")
-            keys_list = mph.getParams(self.selector_dropdown.currentText(), custom = (self.custom_dropdown.currentText() == "Custom"))
+            params = mph.getParams(self.selector_dropdown.currentText(), custom = (self.custom_dropdown.currentText() == "Custom"))
+            keys_list = params[0]
+            constant_list = [key in params[1] for key in keys_list]
 
             if delete == True:
                 for i in reversed(range(self.keys_layout.count())): 
                     self.keys_layout.itemAt(i).widget().deleteLater()
-
-
             
             if values == None:
                 values = []
                 for key in keys_list:
                     values.append(None)
 
-            for key, value in zip(keys_list, values):
+            '''for key, value in zip(keys_list, values):
                 label = QLabel(f"{key}:")
                 dropdown = self.parent.dropdownMenu(self.parent.data[0])
                 if value != None:
                     dropdown.setCurrentText(value)
                 group = self.parent.pairItems([label, dropdown])
-                self.keys_layout.addWidget(group)
+                self.keys_layout.addWidget(group)'''
+
+            for key, constant, value in zip(keys_list, constant_list, values):
+                if constant:
+                    self.keys_layout.addWidget(PresetConstant(self, key, value))
+                else:
+                    self.keys_layout.addWidget(PresetDropdown(self, key, value, self.parent.data[0]))
+
+    def getValues(self):
+        return([self.custom_dropdown.currentText(), self.selector_dropdown.currentText(), self.getKeys()])
+
+class PresetParameterValue(QWidget):
+    def getValue(self):
+        return(None)
+
+class PresetConstant(PresetParameterValue):
+    def __init__(self, parent, label, value):
+        super(QWidget, self).__init__()
+
+        self.constant = True
+
+        self.constant_field = QLineEdit()
+        if value != None:
+            self.constant_field.setText(value)
+
+        self.setLayout(self.pairItems([QLabel(f"{label}:"), self.constant_field]))
+
+    def getValue(self):
+        return(self.constant_field.text())
+
+    def pairItems(self, items):
+        pair_layout = QHBoxLayout()
+        for item in items:
+            pair_layout.addWidget(item)
+        return(pair_layout)  
+
+class PresetDropdown(PresetParameterValue):
+    def __init__(self, parent, label, value, data):
+        super(QWidget, self).__init__()
+
+        self.constant = False
+
+        self.dropdown = QComboBox()
+        self.dropdown.addItems(data)
+
+        if value != None:
+            self.dropdown.setCurrentText(value)
+
+        self.setLayout(self.pairItems([QLabel(f"{label}:"), self.dropdown]))
+
+    def getValue(self):
+        return(self.dropdown.currentText())
+
+    def pairItems(self, items):
+        pair_layout = QHBoxLayout()
+        for item in items:
+            pair_layout.addWidget(item)
+        return(pair_layout)
 
 class ConcatWizard(QWidget):
     def __init__(self, parent):
@@ -915,8 +992,6 @@ class ConcatWizard(QWidget):
 
     def confirm(self):
         formatList = self.parent.tabData(self.format.currentText(), keys=True)[1][0:2]
-        print(f'name of format: {self.format.currentText()}')
-        print(f'format: {formatList}')
 
         data = []
 
@@ -928,13 +1003,10 @@ class ConcatWizard(QWidget):
 
         # REMOVE DUPLICATES
 
-        print(f'before dupe removal:{data}')
         data = self.uniqueData(data)
-        print(f'after dupe removal:{data}')
         #
 
         data = [*formatList, *data]
-        print(f'after keys: {data}')
 
         self.parent.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
         self.deleteSelf()

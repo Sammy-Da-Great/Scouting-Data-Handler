@@ -31,13 +31,30 @@ def delFile(name):
 
 def getParams(file, custom = False): #list of strings
     funct = getFunct(file, custom)
-    return inspect.signature(funct).parameters
+
+    return (inspect.signature(funct).parameters, getModule(file, custom)[2])
 
 def saveConversion(convert_data, name):
     db.write_csv(f"{name}", convert_data)
 
 def readConversion(name):
-    return db.read_csv(f"{name}")
+    raw_conversion = db.read_csv(f"{name}")
+    conversion = {}
+    conversion['format'] = db.read_csv(f"{name}")[0]
+
+    rows = []
+    for row_data in raw_conversion[1:]:
+        row = {}
+        row['name'] = row_data[0]
+        row['category'] = row_data[1]
+        row['preset'] = row_data[2]
+
+        row['keys'] = row_data[3:]
+        rows.append(row)
+    
+    conversion['rows'] = rows
+
+    return conversion
 
 def runFunct(parameters, file, custom = False):
     funct = getFunct(file, custom)
@@ -57,13 +74,74 @@ def getModule(file, custom = False):
     mod_name, func_name = function_string.rsplit('.',1)
     mod = importlib.import_module(mod_name)
     funct = getattr(mod, func_name)
-    return((mod, funct))
+    return((mod, funct, getattr(mod, "constants")))
 
-def runConversion(convert_data, data):
+def runConversion(convert_data, data, constants):
     if convert_data[0] == data[0]:
         lookup = dict()
         for key in data[0]:
-            lookup[key] = len(lookup)
+            lookup[str(key)] = len(lookup)
+
+        conversion_names = [conversion[0] for conversion in convert_data[1:]]
+        
+        conversions = dict()
+
+        for conversion_data in convert_data[1:]:
+            conversion = {}
+            conversion['category'] = conversion_data[1]
+            conversion['preset'] = conversion_data[2]
+            conversion['parameters'] = conversion_data[3:]
+            conversion['data_type'] = getModule(conversion['preset'], custom = (conversion['category'] == "Custom"))[0].data_type
+            conversions[conversion_data[0]] = conversion
+
+        for conversion_data in list(zip(conversion_names, constants[1:])):
+            conversions[conversion_data[0]]['parameters'] = list(zip(conversions[conversion_data[0]]['parameters'], conversion_data[1]))
+
+        
+        data_rows = []
+
+        for data_row in data[2:]:
+
+            row = []
+            for key in conversion_names:
+                conversion = conversions[key]
+
+                parameters = []
+                for parameter in conversion['parameters']:
+                    parameter_buffer = None
+
+                    if not(parameter[1]): # If dropdown
+                        parameter_buffer = data_row[lookup[parameter[0]]]
+                    elif parameter[1]:
+                        parameter_buffer = parameter[0]
+                    parameters.append(parameter_buffer) 
+
+                row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
+
+            row = [str(row_item) for row_item in row]
+            data_rows.append(row)
+
+        data_format = [conversion_names]
+        data_format.append([conversions[key]['data_type'] for key in conversion_names])
+
+
+        return [*data_format, *data_rows]
+                                   
+
+
+                
+
+
+
+
+
+
+
+
+
+        '''
+        print(convert_data)
+        print(constants)
 
         convert_keys = []
         convert_data_types = []
@@ -77,19 +155,18 @@ def runConversion(convert_data, data):
 
         for data_row in data[2:]:
             row = []
-            for convert_row in convert_data[1:]:
+            print(list(zip(convert_data[1][3:], constants)))
+            for convert_item in list(zip(convert_data[1][3:], constants)):
+                print(convert_item)
                 parameters = []
-                for parameter in convert_row[3:]:
-                    parameters.append(data_row[lookup[parameter]])
+                for parameter in convert_item:
+                    if parameter[1] == True:
+                        parameters.append(parameter[0])
+                    elif parameter[1] == False:
+                        parameters.append(data_row[lookup[str(parameter[0])]])
                 row.append(runFunct(parameters, convert_row[2], convert_row[1] == "Custom"))
             rows.append(row)
         
-        return(rows)
-                
-            
-
-
-
-
+        return(rows)'''
     else:
         print("error, keys of original do not match the keys of the table")
