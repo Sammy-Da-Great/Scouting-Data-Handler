@@ -681,8 +681,11 @@ class ModifyWizard(QWidget):
 
         self.data = data
         
-        self.sidebar = QWidget()
+        self.scroll_area = QScrollArea()
+        self.sidebar = QGroupBox()
+        self.scroll_area.setWidgetResizable(True)
         self.sidebar_layout = QVBoxLayout(self.sidebar)
+        self.scroll_area.setWidget(self.sidebar)
         
         self.addItemButton = QPushButton("+")
         self.removeItemButton = QPushButton("-")
@@ -706,7 +709,7 @@ class ModifyWizard(QWidget):
         self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
         self.layoutGrid.addWidget(self.pairItems([QLabel("Name:"), self.nameInput]), 1, 0)
 
-        self.layoutGrid.addWidget(self.sidebar, 2, 0)
+        self.layoutGrid.addWidget(self.scroll_area, 2, 0)
 
         self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 3, 0)
 
@@ -765,14 +768,16 @@ class ModifyWizard(QWidget):
         return(presets)
 
 
-    def addItem(self, key = "", custom = None, preset = None, keylist = None):
+    def addItem(self, key = "", custom = None, preset = None, keylist = None, size = 200):
         buffer = self.pairItems([QLineEdit(key), PresetSelector(self, custom = custom, preset = preset, keylist = keylist)])
+        buffer.setFixedHeight(size)
         self.sidebar_layout.addWidget(buffer)
     
     def removeItem(self):
-        widget = self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget()
-        if widget != None:
-            self.deleteWidget(widget)
+        if type(self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1)) != type(None):
+            widget = self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget()
+            if widget != None:
+                self.deleteWidget(widget)
 
     def deleteWidget(self, widget):
         import sip
@@ -795,7 +800,7 @@ class ModifyWizard(QWidget):
         return filenames
 
     def dropdownMenu(self, data):
-        dropdown = QComboBox()
+        dropdown = UnscrollableQComboBox(self.sidebar)
         dropdown.addItems(data)
         return(dropdown)
 
@@ -922,8 +927,9 @@ class PresetDropdown(PresetParameterValue):
         super(QWidget, self).__init__()
 
         self.constant = False
+        self.parent = parent
 
-        self.dropdown = QComboBox()
+        self.dropdown = UnscrollableQComboBox(scrollWidget = self.parent.parent.sidebar)
         self.dropdown.addItems(data)
 
         if value != None:
@@ -1092,6 +1098,18 @@ class QListDragAndDrop(QListWidget):
        self.setWordWrap(True)
        self.setSortingEnabled(True)
        self.setAcceptDrops(True)
+
+class UnscrollableQComboBox(QComboBox):
+    def __init__(self, scrollWidget=None, *args, **kwargs):
+        super(UnscrollableQComboBox, self).__init__(*args, **kwargs)  
+        self.scrollWidget = scrollWidget
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def wheelEvent(self, *args, **kwargs):
+        if self.hasFocus():
+            return QComboBox.wheelEvent(self, *args, **kwargs)
+        else:
+            return self.scrollWidget.wheelEvent(*args, **kwargs)
 
 def start_app():
     app = QApplication(sys.argv)
