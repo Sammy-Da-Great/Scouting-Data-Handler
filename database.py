@@ -19,6 +19,9 @@ config = config_maker.read_global_config("global_config.json")
 
 database_name = config.database_name
 
+def read_config():
+    config = config_maker.read_global_config("global_config.json")
+
 def query(query_text, input_data = ""): # cursor
     mydb = mysql.connector.connect(
         host = config.host,

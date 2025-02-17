@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from pathlib import Path
 import os
 
-class Global_Config:
+class Global_Config():
     def __init__(self, host, user, password, database_name): 
         self.host = host
         self.user = user

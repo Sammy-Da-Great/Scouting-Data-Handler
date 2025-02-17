@@ -20,7 +20,7 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 
 
 import sys
-from config_maker import read_global_config as config
+import config_maker
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 import database
@@ -240,22 +240,6 @@ class Tabs(QWidget):
 
             layoutGrid.addWidget(content)
 
-    def createLicenseTab(self):
-        if self.test("License"): #Multiple tabs with the name name cannot exist
-            self.delete("License")
-        
-
-        content = ScrollLabel()
-        text = database.get_license()
-        content.setText(text)
-
-        tab = self.add("License", tab_type = "License")
-        layoutGrid = QGridLayout()
-        tab.setLayout(layoutGrid)
-        tab.setAutoFillBackground(True)
-
-        layoutGrid.addWidget(content)
-
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -432,16 +416,25 @@ class MenuBar(QWidget):
         self.saveActionSQLAs = self.create_toolbar_button("Save Current Tab as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
         self.saveActionCSV = self.create_toolbar_button("Save Current Tab as .csv as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.close)
+
+        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs))
         
         #
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
-        self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.tabs.createConcatTab())
-        self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
-        self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
+        merge_tabs = self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.tabs.createConcatTab())
+        modify_keys = self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
+        data_button = self.create_toolbar_button("Data", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
+        settings_button = self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
+
+        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [merge_tabs, modify_keys], self.parent.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([settings_button], [], self.parent.menus.settings))
+
         #Database
         database_names = database.get_all_databases()
 
         database_dropdown = self.create_toolbar_dropdown("Database", menuBar)
+
+        self.parent.menus.currentChanged.connect(lambda: self.parent.menus.disableItemsOnMenu([], [database_dropdown], self.parent.menus.tabs))
 
         view_dropdown = self.create_toolbar_dropdown("View", database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
@@ -452,7 +445,7 @@ class MenuBar(QWidget):
         import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
 
         helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
-        self.create_toolbar_button("License", helpDropdown, lambda: self.tabs.createLicenseTab())
+        self.create_toolbar_button("License", helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.license))
         #
 
     def updateMenuBar(self):
@@ -1118,15 +1111,120 @@ class MenuManager(QStackedWidget):
         super(QStackedWidget, self).__init__()
         self.tabs = Tabs(self)
         self.settings = Settings(self)
+        self.license = License(self)
 
         self.addWidget(self.tabs)
         self.addWidget(self.settings)
+        self.addWidget(self.license)
 
         self.setCurrentWidget(self.tabs)
+
+    def disableItemsOnMenu(self, items_disabled, items_enabled, menu):
+        menu_selected = (self.currentIndex() == self.indexOf(menu))
+
+        for item in items_disabled:
+            item.setEnabled(not(menu_selected))
+        for item in items_enabled:
+            item.setEnabled(menu_selected)
     
 class Settings(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__()
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.parent = parent 
+        self.global_config = self.getGlobalConfig()
+
+        self.config_items = {}
+        self.config_items['host'] = SettingItem(self, 'Host', set_data= self.global_config['host'])
+        self.config_items['user'] = SettingItem(self, 'User', set_data= self.global_config['user'])
+        self.config_items['password'] = SettingItem(self, 'Password', set_data= self.global_config['password'], echomode= QLineEdit.Password)
+        self.config_items['database'] = SettingItem(self, 'Database Name', set_data= self.global_config['database'])
+
+        for key in self.config_items.keys():
+            self.layout.addWidget(self.config_items[key])
+
+        self.buttons = QWidget()
+        self.buttons_layout = QHBoxLayout()
+        self.buttons.setLayout(self.buttons_layout)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(lambda: self.cancel())
+        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button.clicked.connect(lambda: self.confirm())
+
+        self.buttons_layout.addWidget(self.cancel_button)
+        self.buttons_layout.addWidget(self.confirm_button)
+        self.layout.addWidget(self.buttons)
+
+    def confirm(self):
+        self.global_config = self.getConfig()
+        config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database']]), "global_config.json")
+        database.read_config()
+
+        self.exit()
+
+    def cancel(self):
+        self.global_config = self.getGlobalConfig()
+
+        for key in self.config_items.keys():
+            self.config_items[key].set_data(self.global_config[key])
+        
+        self.exit()
+
+    def exit(self):
+        self.parent.setCurrentWidget(self.parent.tabs)
+
+    def getConfig(self):
+        buffer = {}
+
+        for key in self.config_items.keys():
+            buffer[key] = self.config_items[key].get_data()
+
+        return buffer
+    
+    def getGlobalConfig(self):
+        buffer_config = config_maker.read_global_config("global_config.json")
+        buffer = {}
+        buffer['host'] = buffer_config.host
+        buffer['user'] = buffer_config.user
+        buffer['password'] = buffer_config.password
+        buffer['database'] = buffer_config.database_name
+
+        return(buffer)
+
+
+class SettingItem(QWidget):
+    def __init__(self, parent, label_text, set_data="", echomode=QLineEdit.Normal):
+        super(QWidget, self).__init__()
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.echomode = echomode
+
+        self.label = QLabel(f'{label_text}:')
+        self.layout.addWidget(self.label)
+
+        self.field = QLineEdit(set_data)
+        self.field.setEchoMode(echomode)
+        self.layout.addWidget(self.field)
+
+    def get_data(self):
+        return(self.field.text())
+
+    def set_data(self, data):
+        self.field.setText(data)
+
+class License(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__()
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+        self.scroll = ScrollLabel()
+
+        self.scroll.setText(database.get_license())
+
+        self.layout.addWidget(self.scroll)
 
 
 
