@@ -36,8 +36,11 @@ class Window(QMainWindow):
         self.resize(1000, 500)
         self.showMaximized()
 
-        self.tabs = Tabs(self)
-        self.setCentralWidget(self.tabs)
+        self.menus = MenuManager(self)
+        self.tabs = self.menus.tabs #Tabs(self)
+        self.settings = self.menus.settings #Settings(self)
+
+        self.setCentralWidget(self.menus)
 
 
         self.menubar = MenuBar(self)
@@ -434,6 +437,7 @@ class MenuBar(QWidget):
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
         self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.tabs.createConcatTab())
         self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
+        self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
         #Database
         database_names = database.get_all_databases()
 
@@ -446,8 +450,6 @@ class MenuBar(QWidget):
         self.database_dropdowns(database_names, export_dropdown)
 
         import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
-        
-        self.create_toolbar_button("Settings", database_dropdown)
 
         helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
         self.create_toolbar_button("License", helpDropdown, lambda: self.tabs.createLicenseTab())
@@ -1110,6 +1112,25 @@ class UnscrollableQComboBox(QComboBox):
             return QComboBox.wheelEvent(self, *args, **kwargs)
         else:
             return self.scrollWidget.wheelEvent(*args, **kwargs)
+
+class MenuManager(QStackedWidget):
+    def __init__(self, parent):
+        super(QStackedWidget, self).__init__()
+        self.tabs = Tabs(self)
+        self.settings = Settings(self)
+
+        self.addWidget(self.tabs)
+        self.addWidget(self.settings)
+
+        self.setCurrentWidget(self.tabs)
+    
+class Settings(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__()
+
+
+
+
 
 def start_app():
     app = QApplication(sys.argv)

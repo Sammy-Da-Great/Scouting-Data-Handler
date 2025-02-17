@@ -37,10 +37,10 @@ def getParams(file, custom = False): #list of strings
 def saveConversion(convert_data, name):
     db.write_csv(f"{name}", convert_data)
 
-def readConversion(name):
-    raw_conversion = db.read_csv(f"{name}")
+def readConversion(filepath):
+    raw_conversion = db.read_csv(filepath)
     conversion = {}
-    conversion['format'] = db.read_csv(f"{name}")[0]
+    conversion['format'] = db.read_csv(filepath)[0]
 
     rows = []
     for row_data in raw_conversion[1:]:
@@ -50,6 +50,8 @@ def readConversion(name):
         row['preset'] = row_data[2]
 
         row['keys'] = row_data[3:]
+        row['constants'] = getModule(row['preset'], custom= (row['category'] == "Custom"))[2]
+        row['constants'] = [key in row['constants'] for key in getParams(row['preset'], custom= (row['category'] == "Custom"))]
         rows.append(row)
     
     conversion['rows'] = rows
@@ -81,6 +83,9 @@ def runConversion(convert_data, data, constants):
         lookup = dict()
         for key in data[0]:
             lookup[str(key)] = len(lookup)
+        
+        print(f'convert_data: {convert_data}')
+        print(f'constants: {constants}')
 
         conversion_names = [conversion[0] for conversion in convert_data[1:]]
         
@@ -126,47 +131,18 @@ def runConversion(convert_data, data, constants):
 
 
         return [*data_format, *data_rows]
-                                   
 
-
-                
-
-
-
-
-
-
-
-
-
-        '''
-        print(convert_data)
-        print(constants)
-
-        convert_keys = []
-        convert_data_types = []
-        for row in convert_data[1:]:
-            convert_keys.append(row[0])
-            convert_data_types.append(getModule(row[2], row[1] == "Custom")[0].data_type)
-            
-        rows = []
-        rows.append(convert_keys)
-        rows.append(convert_data_types)
-
-        for data_row in data[2:]:
-            row = []
-            print(list(zip(convert_data[1][3:], constants)))
-            for convert_item in list(zip(convert_data[1][3:], constants)):
-                print(convert_item)
-                parameters = []
-                for parameter in convert_item:
-                    if parameter[1] == True:
-                        parameters.append(parameter[0])
-                    elif parameter[1] == False:
-                        parameters.append(data_row[lookup[str(parameter[0])]])
-                row.append(runFunct(parameters, convert_row[2], convert_row[1] == "Custom"))
-            rows.append(row)
-        
-        return(rows)'''
     else:
         print("error, keys of original do not match the keys of the table")
+
+def runConversionFromCSV(data, conversion_filepath):
+    conversion = readConversion(conversion_filepath)
+
+    convert_data = db.read_csv(conversion_filepath)
+
+    constants = [convert_data[0]]
+
+    for row in conversion['rows']:
+        constants.append(row['constants'])
+    
+    return(runConversion(convert_data, data, constants))
