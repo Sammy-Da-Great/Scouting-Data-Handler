@@ -447,6 +447,7 @@ class MenuBar(QWidget):
         import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
 
         helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
+        self.create_toolbar_button("About", helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.readme))
         self.create_toolbar_button("License", helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.license))
         #
 
@@ -1114,10 +1115,12 @@ class MenuManager(QStackedWidget):
         self.tabs = Tabs(self)
         self.settings = Settings(self)
         self.license = License(self)
+        self.readme = ReadMe(self)
 
         self.addWidget(self.tabs)
         self.addWidget(self.settings)
         self.addWidget(self.license)
+        self.addWidget(self.readme)
 
         self.setCurrentWidget(self.tabs)
 
@@ -1196,7 +1199,6 @@ class Settings(QWidget):
 
         return(buffer)
 
-
 class SettingItem(QWidget):
     def __init__(self, parent, label_text, set_data="", echomode=QLineEdit.Normal):
         super(QWidget, self).__init__()
@@ -1225,6 +1227,17 @@ class License(QWidget):
         self.scroll = ScrollLabel()
 
         self.scroll.setText(database.get_license())
+
+        self.layout.addWidget(self.scroll)
+
+class ReadMe(QWidget):
+    def __init__(self, parent):
+        super(QWidget, self).__init__()
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+        self.scroll = ScrollLabel()
+
+        self.scroll.setText(database.get_readme())
 
         self.layout.addWidget(self.scroll)
 

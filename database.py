@@ -168,4 +168,11 @@ def get_license():
         lines = stream.readlines()
         text = "".join(lines)
     return(text)
+
+def get_readme():
+    text = ""
+    with open("README", 'r') as stream:
+        lines = stream.readlines()
+        text = "".join(lines)
+    return(text)
     
