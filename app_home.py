@@ -211,34 +211,36 @@ class Tabs(QWidget):
             self.delete("Merge Data")
 
         name = self.tab_bar.tabText(self.tab_bar.currentIndex())
-        tab_type = self.tablist[name][2]
-        if tab_type == "DataTab":
+        if name != '':
+            tab_type = self.tablist[name][2]
+            if tab_type == "DataTab":
 
-            tab = self.add("Merge Data", tab_type = "ConcatTab")
-            layoutGrid = QGridLayout()
-            tab.setLayout(layoutGrid)
-            tab.setAutoFillBackground(True)
+                tab = self.add("Merge Data", tab_type = "ConcatTab")
+                layoutGrid = QGridLayout()
+                tab.setLayout(layoutGrid)
+                tab.setAutoFillBackground(True)
 
-            content = ConcatWizard(self)
-            layoutGrid.addWidget(content)
+                content = ConcatWizard(self)
+                layoutGrid.addWidget(content)
 
     def modifyTab(self):
         if self.test("Modify Data"): #Multiple tabs with the name name cannot exist
             self.delete("Modify Data")
         name = self.tab_bar.tabText(self.tab_bar.currentIndex())
-        tab_type = self.tablist[name][2]
+        if name != '':
+            tab_type = self.tablist[name][2]
 
-        if tab_type == "DataTab":
-            data = self.currentTabData(keys=True)
+            if tab_type == "DataTab":
+                data = self.currentTabData(keys=True)
 
-            content = ModifyWizard(self, data[1], data[2], self.getCurrentTab(), name)
+                content = ModifyWizard(self, data[1], data[2], self.getCurrentTab(), name)
 
-            tab = self.add("Modify Data", tab_type = "ModifyTab")
-            layoutGrid = QGridLayout()
-            tab.setLayout(layoutGrid)
-            tab.setAutoFillBackground(True)
+                tab = self.add("Modify Data", tab_type = "ModifyTab")
+                layoutGrid = QGridLayout()
+                tab.setLayout(layoutGrid)
+                tab.setAutoFillBackground(True)
 
-            layoutGrid.addWidget(content)
+                layoutGrid.addWidget(content)
 
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
