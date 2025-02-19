@@ -28,12 +28,14 @@ import database
 import os
 import ModifyData.ModifyPresetHandler as mph
 
+version = "2025.2.19"
+
 class Window(QMainWindow):
     """Main Window."""
     def __init__(self, parent=None):
         """Initializer."""
         super().__init__(parent)
-        self.setWindowTitle("Scouting Data Handler")
+        self.setWindowTitle(f'Scouting Data Handler v{version}')
         self.resize(1000, 500)
         self.showMaximized()
 
