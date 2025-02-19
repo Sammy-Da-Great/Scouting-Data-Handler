@@ -418,7 +418,7 @@ class MenuBar(QWidget):
         self.saveActionSQL = self.create_toolbar_button("Save Current Tab to SQL", file_dropdown, lambda: self.tabs.saveCurrentTabSQL())
         self.saveActionSQLAs = self.create_toolbar_button("Save Current Tab as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
         self.saveActionCSV = self.create_toolbar_button("Save Current Tab as .csv as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
-        self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.close)
+        self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.parent.close)
 
         file_dropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs))
         
