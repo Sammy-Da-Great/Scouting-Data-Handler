@@ -23,6 +23,7 @@ import sys
 import config_maker
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
+from PyQt5 import QtGui
 import database
 import os
 import ModifyData.ModifyPresetHandler as mph
@@ -1247,6 +1248,29 @@ class ReadMe(QWidget):
 
 def start_app():
     app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create("fusion"))
+    palette = QtGui.QPalette()
+    palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(255, 255, 255))
+    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(50, 50, 50))
+    palette.setColor(QtGui.QPalette.Light, QtGui.QColor(75, 75, 75))
+    palette.setColor(QtGui.QPalette.Midlight, QtGui.QColor(62, 62, 62))
+    palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(25, 25, 25))
+    palette.setColor(QtGui.QPalette.Mid, QtGui.QColor(33, 33, 33))
+    palette.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))
+    palette.setColor(QtGui.QPalette.BrightText, QtGui.QColor(255, 255, 255))
+    palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
+    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
+    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(50, 50, 50))
+    palette.setColor(QtGui.QPalette.Shadow, QtGui.QColor(0, 0, 0))
+    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(200, 174, 64))
+    palette.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(0, 0, 0))
+    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(200, 174, 64))
+    palette.setColor(QtGui.QPalette.LinkVisited, QtGui.QColor(200, 174, 64))
+    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 25, 25))
+    palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 220))
+    palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(0, 0, 0))
+    palette.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(255, 255, 255, 127))
+    app.setPalette(palette)
     win = Window()
     win.show()
     app.exec_()
