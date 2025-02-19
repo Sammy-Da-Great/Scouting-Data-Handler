@@ -1,9 +1,17 @@
+'''
+Scouting Data Handler, a custom SQL interface
+Copyright (C) 2025  Samuel Husmann
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see https://www.gnu.org/licenses/.
+'''
+
 import json
 from types import SimpleNamespace
 from pathlib import Path
 import os
 
-class Global_Config:
+class Global_Config():
     def __init__(self, host, user, password, database_name): 
         self.host = host
         self.user = user

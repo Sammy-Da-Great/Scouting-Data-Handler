@@ -6,7 +6,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-from database import *
+data_type = "varchar(45)"
+constants = []
 
-def create_database(name = database_name):
-    query("CREATE DATABASE IF NOT EXISTS " + name)
+def funct(a, b):
+    return (a + b)

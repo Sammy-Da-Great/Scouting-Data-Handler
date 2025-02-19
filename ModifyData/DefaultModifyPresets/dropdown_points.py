@@ -6,7 +6,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-from database import *
+data_type = "smallint unsigned"
+constants = ["values", "points"]
 
-def create_database(name = database_name):
-    query("CREATE DATABASE IF NOT EXISTS " + name)
+def funct(dropdown, values, points):
+    conversion = dict(zip(values.split(","), points.split(",")))
+    return(conversion[dropdown])
