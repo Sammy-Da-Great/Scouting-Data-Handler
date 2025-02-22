@@ -672,6 +672,9 @@ class ModifyWizard(QWidget):
 
         self.nameInput = QLineEdit()
 
+        self.directButton = QPushButton("Direct")
+        self.directButton.clicked.connect(lambda: self.directConversion())
+
         self.openPresetsButton = QPushButton("Open Presets Folder")
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
         self.confirmButton = QPushButton("Confirm")
@@ -691,11 +694,28 @@ class ModifyWizard(QWidget):
 
         self.layoutGrid.addWidget(self.scroll_area, 2, 0)
 
-        self.layoutGrid.addWidget(self.pairItems([self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 3, 0)
+        self.layoutGrid.addWidget(self.pairItems([self.directButton, self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 3, 0)
 
     def saveData(self, name, data):
         self.parent.createDataTabFromList(name, data, None, (None, None))
         self.parent.delete("Modify Data")
+
+    def directConversion(self):
+        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+        for widget in widgets:
+            self.deleteWidget(widget)
+
+        for item in zip(self.data[0], self.data[1]):
+            
+            if item[1] == "smallint unsigned":
+                preset = "direct_int.py"
+            elif item[1] == "tinyint(1)":
+                preset = "direct_bool.py"
+            elif item[1] == "timestamp":
+                preset = "direct_timestamp.py"
+            else:
+                preset = "direct_string.py"
+            self.addItem(key = item[0], custom = "Default", preset = preset, keylist = [item[0]])
 
 
     def loadConversion(self):
@@ -797,8 +817,6 @@ class PresetSelector(QWidget):
         self.setLayout(self.layout)
 
         self.preset_default = preset
-
-        print(f'recieved: {str([custom, preset, keylist])}')
 
         self.custom_dropdown = self.parent.dropdownMenu(["Default", "Custom"])
         if custom != None:
