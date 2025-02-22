@@ -21,9 +21,10 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 
 import sys
 import config_maker
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QMimeData, QPoint
 from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
+from PyQt5.QtGui import QDrag
 import database
 import os
 import ModifyData.ModifyPresetHandler as mph
@@ -659,10 +660,12 @@ class ModifyWizard(QWidget):
 
         self.data = data
         
+        self.heightVar = 200
+
         self.scroll_area = QScrollArea()
-        self.sidebar = QGroupBox()
+        self.sidebar = DraggableGroupBox(self, self.heightVar)
         self.scroll_area.setWidgetResizable(True)
-        self.sidebar_layout = QVBoxLayout(self.sidebar)
+        self.sidebar_layout = self.sidebar.layout
         self.scroll_area.setWidget(self.sidebar)
         
         self.addItemButton = QPushButton("+")
@@ -768,9 +771,10 @@ class ModifyWizard(QWidget):
         return(presets)
 
 
-    def addItem(self, key = "", custom = None, preset = None, keylist = None, size = 200):
-        buffer = self.pairItems([QLineEdit(key), PresetSelector(self, custom = custom, preset = preset, keylist = keylist)])
-        buffer.setFixedHeight(size)
+    def addItem(self, key = "", custom = None, preset = None, keylist = None, size = None):
+        if size == None:
+            size = self.heightVar
+        buffer = self.pairItems([QLineEdit(key), PresetSelector(self, custom = custom, preset = preset, keylist = keylist)], frame = True, size = size)
         self.sidebar_layout.addWidget(buffer)
     
     def removeItem(self):
@@ -785,11 +789,19 @@ class ModifyWizard(QWidget):
         sip.delete(widget)
         self.widget = None
 
-    def pairItems(self, items):
-        pair = QWidget()
+    def pairItems(self, items, frame = False, size = None):
+        if frame:
+            pair = QFrame()
+            pair.setFrameStyle(QFrame.Panel | QFrame.Raised)
+            pair.setLineWidth(2)
+        else:
+            pair = QWidget()
         pair_layout = QHBoxLayout(pair)
         for item in items:
             pair_layout.addWidget(item)
+
+        if size != None:
+            pair.setFixedHeight(size)
         return(pair)
 
     def fetchPresets(self, custom = False):
@@ -812,6 +824,7 @@ class ModifyWizard(QWidget):
 class PresetSelector(QWidget):
     def __init__(self, parent, custom = None, preset = None, keylist = None):
         super(QWidget, self).__init__()
+
         self.parent = parent
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
@@ -1259,6 +1272,86 @@ class ReadMe(QWidget):
         self.scroll.setText(database.get_readme())
 
         self.layout.addWidget(self.scroll)
+
+class DraggableGroupBox(QGroupBox):
+    def __init__(self, parent, heightVar):
+        super(DraggableGroupBox, self).__init__(parent)
+
+        self.target = None
+        self.setAcceptDrops(True)
+        self.layout = QVBoxLayout(self)
+
+        self.heightVar = heightVar
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.MouseButtonPress:
+            self.mousePressEvent(event)
+        elif event.type() == QEvent.MouseMove:
+            self.mouseMoveEvent(event)
+        elif event.type() == QEvent.MouseButtonRelease:
+            self.mouseReleaseEvent(event)
+        return super().eventFilter(watched, event)
+
+    def get_index(self, pos):
+        for i in range(self.layout.count()):
+            if self.layout.itemAt(i).geometry().contains(pos) and i != self.target:
+                return i
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.target = self.get_index(event.pos())
+        else:
+            self.target = None
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.LeftButton and self.target is not None:
+            drag = QDrag(self.layout.itemAt(self.target).widget())
+            pix = self.layout.itemAt(self.target).widget().grab()
+            mimedata = QMimeData()
+            mimedata.setImageData(pix)
+            drag.setMimeData(mimedata)
+            drag.setPixmap(pix)
+            drag.setHotSpot(event.pos() - self.layout.itemAt(self.target).widget().pos())
+            drag.exec_()
+
+    def mouseReleaseEvent(self, event):
+        self.target = None
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasImage():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        point = QPoint(event.pos().x(), event.pos().y() - int(self.heightVar / 2))
+        if not event.source().geometry().contains(event.pos()):
+
+            for i in range(self.layout.count()):
+                if i > 0:
+                    if self.layout.itemAt(i).widget().pos().y() < point.y():
+                        source = i + 1
+                if i == 0:
+                    if self.layout.itemAt(0).widget().pos().y() < point.y():
+                        source = 1
+                    else:
+                        source = 0
+
+            if source is None or source == self.target:
+                return
+            
+            widgets = [self.layout.itemAt(i).widget() for i in range(self.layout.count())]
+
+            widget = QWidgetItem(widgets[self.target])
+
+            self.layout.insertItem(source, self.layout.takeAt(self.target))
+
+            
+
+    def deleteWidget(self, widget):
+        import sip
+        sip.delete(widget)
+
 
 
 
