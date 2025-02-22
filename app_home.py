@@ -28,7 +28,7 @@ import database
 import os
 import ModifyData.ModifyPresetHandler as mph
 
-version = "2025.2.19"
+version = "2025.2.22"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -43,10 +43,9 @@ class Window(QMainWindow):
         self.tabs = self.menus.tabs #Tabs(self)
         self.settings = self.menus.settings #Settings(self)
 
-        self.setCentralWidget(self.menus)
-
-
         self.menubar = MenuBar(self)
+
+        self.setCentralWidget(self.menus)
 
         self.layout = QGridLayout()
 
@@ -118,46 +117,24 @@ class Tabs(QWidget):
 
         self.delete(tab_name, parent = None)
 
-    def test(self, name, dictionary = tablist, parent = None): # Boolean
+    def test(self, name, dictionary = tablist, parent = None, data_type = None): # Boolean
         # Tests if a tab exists in tab_bar
         if parent == None:
             parent = self.tab_bar
-        return(name in dictionary) # If name is in dictionary, return true. Else, return false.
+
+        if name in dictionary:
+            if data_type != None:
+                return(dictionary[name][2] == data_type)
+            else:
+                return(name in dictionary) # If name is in dictionary, return true. Else, return false.
+        else:
+            return(False)
 
     def createDataTab(self, name, db_address, filepath, dictionary = tablist): #QWidget[]
         database_name = db_address[0]
         table_name = db_address[1]
         data = database.read_table(db_address)
         self.createDataTabFromList(name, data, filepath, db_address, dictionary)
-
-        '''tab = self.add(name, tab_type = "DataTab")
-        dictionary[name][3] = [db_address]
-        label = QLabel(filepath)
-
-        data = database.read_table(db_address)
-
-        dimensions = list(database.get_dimensions(db_address))
-        dimensions[0] += 1
-
-        table = QTableWidget(*dimensions, tab)
-        table.setHorizontalHeaderLabels(data[0])
-        data.pop(0)
-
-        header_v_text = [str(row[0]) for row in data]
-        header_v_text[0] = "data type"
-        table.setVerticalHeaderLabels(header_v_text)
-
-        layoutGrid = QGridLayout()
-        tab.setLayout(layoutGrid)
-        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        layoutGrid.addWidget(label)
-        layoutGrid.addWidget(table)
-        tab.setAutoFillBackground(True)
-
-        for y in range(0,dimensions[0]):
-            for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
     def createDataTabFromList(self, name, data, filepath, db_address, dictionary=tablist): #QWidget[]
         database_name = db_address[0]
@@ -169,30 +146,6 @@ class Tabs(QWidget):
         tab.setAutoFillBackground(True)
         content = DataTab(self, data, filepath, tab)
         layoutGrid.addWidget(content)
-
-        '''label = QLabel(filepath)
-
-        dimensions = (len(data) - 1, len(data[0]))
-
-        table = QTableWidget(*dimensions, tab)
-        table.setHorizontalHeaderLabels(data[0])
-        data.pop(0)
-
-        header_v_text = [str(row[0]) for row in data]
-        header_v_text[0] = "data type"
-        table.setVerticalHeaderLabels(header_v_text)
-
-        layoutGrid = QGridLayout()
-        tab.setLayout(layoutGrid)
-        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        layoutGrid.addWidget(label)
-        layoutGrid.addWidget(table)
-        tab.setAutoFillBackground(True)
-
-        for y in range(0, dimensions[0]):
-            for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))'''
 
     def createImportTab(self):
         if self.test("Import Data"): #Multiple tabs with the name name cannot exist
@@ -262,15 +215,21 @@ class Tabs(QWidget):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
 
-        tabData = self.currentTabData(parent, keys=False)
-        keys = self.currentTabData(parent, keys=True)[1][0]
-        data = tabData[1]
-        db_address = tabData[2]
+        index = parent.currentIndex()
+        name = parent.tabText(index)
 
-        if tabData[2] == (None, None):
-            self.saveCurrentTabAsSQL(parent=parent)
-        else:
-            self.saveTabDataSQL(data, db_address, keys)
+        if self.test(name, data_type = "DataTab"):
+        
+
+            tabData = self.currentTabData(parent, keys=False)
+            keys = self.currentTabData(parent, keys=True)[1][0]
+            data = tabData[1]
+            db_address = tabData[2]
+
+            if tabData[2] == (None, None):
+                self.saveCurrentTabAsSQL(parent=parent)
+            else:
+                self.saveTabDataSQL(data, db_address, keys)
 
     def saveCurrentTabAsSQL(self, parent = None):
         tabData = self.currentTabData(parent)
@@ -288,14 +247,31 @@ class Tabs(QWidget):
         if (db_address != (None, None)) and (data != None) and (keys != None):
             database.write_to_database(data, db_address, keys)
 
-            self.parent.menubar.updateMenuBar()
+            self.parent.parent.menubar.updateMenuBar()
 
     def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
         index = parent.currentIndex()
         name = parent.tabText(index)
-        return(self.tabData(name, parent, keys, dictionary))
+        if self.test(name, data_type = "DataTab"):
+            return(self.tabData(name, parent, keys, dictionary))
+        else:
+            return(None)
+
+    def currentTabType(self, parent = None, dictionary = tablist, data_type=None):
+        if parent == None: #If parent is not specified, set parent to default tab_bar
+            parent = self.tab_bar
+        index = parent.currentIndex()
+        name = parent.tabText(index)
+        if self.test(name):
+            if data_type != None:
+                return(self.test(name, data_type = data_type))
+            else:
+                return(dictionary[name][2])
+        else:
+            return(False)
+
 
     def tabData(self, name, parent = None, keys = False, dictionary=tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -422,7 +398,7 @@ class MenuBar(QWidget):
         self.saveActionCSV = self.create_toolbar_button("Save Current Tab as .csv as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.parent.close)
 
-        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs))
+        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs.currentTabType(data_type = "DataTab")))
         
         #
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
@@ -431,7 +407,8 @@ class MenuBar(QWidget):
         data_button = self.create_toolbar_button("Data", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
         settings_button = self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
 
-        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [merge_tabs, modify_keys], self.parent.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.parent.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [], self.parent.menus.tabs))
         editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([settings_button], [], self.parent.menus.settings))
 
         #Database
@@ -699,6 +676,8 @@ class ModifyWizard(QWidget):
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
         self.confirmButton = QPushButton("Confirm")
         self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
+
+        self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.test(self.nameInput.text()))))
 
         self.saveConversionButton = QPushButton("Save Conversion")
         self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
@@ -995,6 +974,8 @@ class ConcatWizard(QWidget):
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
+        self.tab_name.textChanged.connect(lambda: self.confirm_step_1.setEnabled(not(self.parent.test(self.tab_name.text()))))
+
         self.updateList()
 
     def confirm(self):
@@ -1115,6 +1096,7 @@ class UnscrollableQComboBox(QComboBox):
 class MenuManager(QStackedWidget):
     def __init__(self, parent):
         super(QStackedWidget, self).__init__()
+        self.parent = parent
         self.tabs = Tabs(self)
         self.settings = Settings(self)
         self.license = License(self)
@@ -1130,10 +1112,26 @@ class MenuManager(QStackedWidget):
     def disableItemsOnMenu(self, items_disabled, items_enabled, menu):
         menu_selected = (self.currentIndex() == self.indexOf(menu))
 
+        self.disableItemsOnCondition(items_disabled, items_enabled, menu_selected)
+
+    def disableItemsOnCondition(self, items_disabled, items_enabled, condition):
+
         for item in items_disabled:
-            item.setEnabled(not(menu_selected))
+            item.setEnabled(not(condition))
         for item in items_enabled:
-            item.setEnabled(menu_selected)
+            item.setEnabled(condition)
+        
+    def hideItemsOnMenu(self, items_disabled, items_enabled, menu):
+        menu_selected = (self.currentIndex() == self.indexOf(menu))
+        
+        self.hideItemsOnCondition(items_disabled, items_enabled, menu_selected)
+
+    def hideItemsOnCondition(self, items_disabled, items_enabled, condition):
+
+        for item in items_disabled:
+            item.setVisible(not(condition))
+        for item in items_enabled:
+            item.setVisible(condition)
     
 class Settings(QWidget):
     def __init__(self, parent):
@@ -1264,14 +1262,18 @@ def start_app():
     palette.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
     palette.setColor(QtGui.QPalette.Window, QtGui.QColor(50, 50, 50))
     palette.setColor(QtGui.QPalette.Shadow, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(200, 174, 64))
+    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(64, 174, 200))
     palette.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(200, 174, 64))
-    palette.setColor(QtGui.QPalette.LinkVisited, QtGui.QColor(200, 174, 64))
+    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(64, 174, 200))
+    palette.setColor(QtGui.QPalette.LinkVisited, QtGui.QColor(64, 174, 200))
     palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 25, 25))
     palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 220))
     palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(0, 0, 0))
     palette.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(255, 255, 255, 127))
+
+    disabled_color = QtGui.QColor(255, 0, 0, 150)
+    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, disabled_color)
+    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
     app.setPalette(palette)
     win = Window()
     win.show()
