@@ -29,7 +29,7 @@ import database
 import os
 import ModifyData.ModifyPresetHandler as mph
 
-version = "2025.2.22"
+version = "2025.2.25"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -482,6 +482,8 @@ class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, db_address=(None, None)):
         super().__init__(parent)
         currentDatabase = db_address[0]
+        if currentDatabase == None:
+            currentDatabase = config_maker.read_global_config().database_name
         currentTable = db_address[1]
         self.setWindowTitle("Save Current Tab as...")
         self.layout = QVBoxLayout()
@@ -704,9 +706,10 @@ class ModifyWizard(QWidget):
         self.parent.delete("Modify Data")
 
     def directConversion(self):
-        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-        for widget in widgets:
-            self.deleteWidget(widget)
+        if self.sidebar_layout.count():
+            widgets = list(self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+            for widget in widgets:
+                widget.delete()
 
         for item in zip(self.data[0], self.data[1]):
             
@@ -748,10 +751,10 @@ class ModifyWizard(QWidget):
     def getConversion(self, constants = False):
         key_list = self.data[0]
         presets = [key_list]
-        widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
+        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
         for widget in widgets:
-            key = widget.itemAt(0).widget().text()
-            values = widget.itemAt(1).widget().getValues()
+            key = widget.key()
+            values = widget.getValues()
             preset_group = values[0]
             preset_name = values[1]
             keys = values[2]
@@ -764,9 +767,9 @@ class ModifyWizard(QWidget):
     def getConstants(self):
         key_list = self.data[0]
         presets = [key_list]
-        widgets = (self.sidebar_layout.itemAt(i).widget().layout() for i in range(self.sidebar_layout.count())) 
+        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
         for widget in widgets:
-            constants = widget.itemAt(1).widget().getConstants()
+            constants = widget.getConstants()
             presets.append(constants)
         return(presets)
 
@@ -774,20 +777,12 @@ class ModifyWizard(QWidget):
     def addItem(self, key = "", custom = None, preset = None, keylist = None, size = None):
         if size == None:
             size = self.heightVar
-        buffer = self.pairItems([QLineEdit(key), PresetSelector(self, custom = custom, preset = preset, keylist = keylist)], frame = True, size = size)
+        buffer = PresetSelector(self, custom = custom, preset = preset, keylist = keylist, key = key, size = size)
         self.sidebar_layout.addWidget(buffer)
     
     def removeItem(self):
         if type(self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1)) != type(None):
-            widget = self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget()
-            if widget != None:
-                self.deleteWidget(widget)
-
-    def deleteWidget(self, widget):
-        import sip
-        widget.layout().parent().layout().removeWidget(widget)
-        sip.delete(widget)
-        self.widget = None
+            self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget().delete()
 
     def pairItems(self, items, frame = False, size = None):
         if frame:
@@ -821,13 +816,23 @@ class ModifyWizard(QWidget):
         presets_layout = QHBoxLayout()
         presets.setLayout()
 
-class PresetSelector(QWidget):
-    def __init__(self, parent, custom = None, preset = None, keylist = None):
+class PresetSelector(QFrame):
+    def __init__(self, parent, custom = None, preset = None, keylist = None, key = "", size = 100):
         super(QWidget, self).__init__()
 
         self.parent = parent
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
+
+        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        self.setLineWidth(2)
+
+        self.setFixedHeight(size)
+
+        self.key_entry = QLineEdit(key)
+        self.delete_button = QPushButton("-")
+        self.delete_button.clicked.connect(lambda: self.delete())
+        self.delete_button.setFixedWidth(40)
 
         self.preset_default = preset
 
@@ -843,12 +848,16 @@ class PresetSelector(QWidget):
         self.keys_layout = QHBoxLayout()
         self.keys.setLayout(self.keys_layout)
 
-
+        self.layout.addWidget(self.delete_button)
+        self.layout.addWidget(self.key_entry)
         self.layout.addWidget(self.custom_dropdown)
         self.layout.addWidget(self.selector_dropdown)
         self.layout.addWidget(self.keys)
 
         self.updateSelector(values=keylist)
+
+    def key(self):
+        return(self.key_entry.text())
 
     def getKeys(self):
         keys = []
@@ -907,6 +916,10 @@ class PresetSelector(QWidget):
 
     def getValues(self):
         return([self.custom_dropdown.currentText(), self.selector_dropdown.currentText(), self.getKeys()])
+
+    def delete(self):
+        import sip
+        sip.delete(self)
 
 class PresetParameterValue(QWidget):
     def getValue(self):
