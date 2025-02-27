@@ -8,9 +8,11 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 
 from ModifyData.ModifyPresetPreset import *
 
-data_type = "smallint unsigned"
-constants = ["values", "points"]
+data_type = ""
+constants = []
 
-def funct(dropdown, values, points):
-    conversion = dict(zip(values.split(","), points.split(",")))
-    return(conversion[dropdown])
+def funct(value):
+    return(value)
+
+def get_data_type(data_type_var, original_data_types):
+    return(original_data_types[0])

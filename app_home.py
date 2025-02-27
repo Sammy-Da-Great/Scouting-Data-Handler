@@ -29,7 +29,7 @@ import database
 import os
 import ModifyData.ModifyPresetHandler as mph
 
-version = "2025.2.25"
+version = "2025.2.26"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -728,7 +728,7 @@ class ModifyWizard(QWidget):
         name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
         if name != "":
             data = mph.readConversion(name)
-            if self.data[0] == data['format']:
+            if all([(data_item in self.data[0]) for data_item in data['format']]):
                 #Delete Current Conversion
                 widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
                 for widget in widgets:
@@ -1395,7 +1395,7 @@ def start_app():
     palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(0, 0, 0))
     palette.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(255, 255, 255, 127))
 
-    disabled_color = QtGui.QColor(255, 0, 0, 150)
+    disabled_color = QtGui.QColor(255, 80, 80, 150)
     palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, disabled_color)
     palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
     app.setPalette(palette)
