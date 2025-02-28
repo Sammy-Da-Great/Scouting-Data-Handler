@@ -37,6 +37,7 @@ class Window(QMainWindow):
         """Initializer."""
         super().__init__(parent)
         self.setWindowTitle(f'Scouting Data Handler v{version}')
+        self.setWindowIcon(QtGui.QIcon('Images/logo.png'))
         self.resize(1000, 500)
         self.showMaximized()
 
