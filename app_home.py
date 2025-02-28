@@ -29,7 +29,7 @@ import database
 import os
 import ModifyData.ModifyPresetHandler as mph
 
-version = "2025.2.26"
+version = "2025.2.27"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -713,14 +713,7 @@ class ModifyWizard(QWidget):
 
         for item in zip(self.data[0], self.data[1]):
             
-            if item[1] == "smallint unsigned":
-                preset = "direct_int.py"
-            elif item[1] == "tinyint(1)":
-                preset = "direct_bool.py"
-            elif item[1] == "timestamp":
-                preset = "direct_timestamp.py"
-            else:
-                preset = "direct_string.py"
+            preset = "direct.py"
             self.addItem(key = item[0], custom = "Default", preset = preset, keylist = [item[0]])
 
 
