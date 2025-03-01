@@ -535,7 +535,7 @@ class ImportWizard(QWidget):
 
             #Checkboxes
             self.sidebar = QVBoxLayout()
-            self.tab_name = QLineEdit("test")
+            self.tab_name = QLineEdit(os.path.splitext(os.path.basename(filepath))[0])
             self.format_label = QLabel("Format:")
             self.key_check = QCheckBox('Keys')
             self.type_check = QCheckBox('Types')
