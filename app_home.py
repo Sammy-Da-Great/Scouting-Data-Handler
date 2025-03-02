@@ -149,20 +149,25 @@ class Tabs(QWidget):
         content = DataTab(self, data, filepath, tab)
         layoutGrid.addWidget(content)
 
-    def createImportTab(self):
+    def createImportTab(self, filepaths = None):
         if self.test("Import Data"): #Multiple tabs with the name name cannot exist
             self.delete("Import Data")
 
-        filepath = SaveFile.file_dialog(self)
-        if filepath != None:
+        if filepaths == None:
+            filepaths = SaveFile.file_dialog(self, many = True)
+        if filepaths != None:
+            if len(filepaths) > 0:
 
-            tab = self.add("Import Data", tab_type = "ImportTab")
-            layoutGrid = QGridLayout()
-            tab.setLayout(layoutGrid)
-            tab.setAutoFillBackground(True)
+                tab = self.add("Import Data", tab_type = "ImportTab")
+                layoutGrid = QGridLayout()
+                tab.setLayout(layoutGrid)
+                tab.setAutoFillBackground(True)
 
-            content = ImportWizard(self, filepath)
-            layoutGrid.addWidget(content)
+                tab = QWidget()
+
+                content = ImportWizard(self, filepaths, tab)
+
+                layoutGrid.addWidget(content)
 
     def createConcatTab(self):
         if self.test("Merge Data"): #Multiple tabs with the name name cannot exist
@@ -446,8 +451,11 @@ class SaveFile(QWidget):
         filename = QFileDialog.getSaveFileName(self, "Save File", name, "Comma Separated (*.csv)")[0]
         return filename
 
-    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)"): # Returns a filepath
-        return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
+    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)", many = False): # Returns a filepath
+        if many == False:
+            return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
+        else:
+            return QFileDialog.getOpenFileNames(self, "Open File", name, extension)[0]
 
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
@@ -507,24 +515,31 @@ class SaveSQLAsDialog(QDialog):
         self.show()
 
 class ImportWizard(QWidget):
-    def __init__(self, parent, filepath):
+    def __init__(self, parent, filepaths, tab):
         super(QWidget, self).__init__(parent)
 
         self.layoutGrid = QGridLayout(self)
         self.setLayout(self.layoutGrid)
         self.setAutoFillBackground(True)
 
+        self.tab = tab
+
         self.parent = parent
 
-        label = QLabel(filepath)
-        self.filepath = filepath
+        self.filepath = filepaths[0]
+        self.filepaths = filepaths
+        label = QLabel(self.filepath)
+        if len(self.filepaths) >= 2:
+            self.filepaths = filepaths[1:]
+        else:
+            self.filepaths = []
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
-        if (filepath == '' or not(database.test(filepath))):
+        if (self.filepath == '' or not(database.test(self.filepath))):
             self.deleteSelf()
         else:
-            self.data = database.read_csv(filepath)
+            self.data = database.read_csv(self.filepath)
             key_number = len(self.data[0])
 
             #table
@@ -535,7 +550,7 @@ class ImportWizard(QWidget):
 
             #Checkboxes
             self.sidebar = QVBoxLayout()
-            self.tab_name = QLineEdit(os.path.splitext(os.path.basename(filepath))[0])
+            self.tab_name = QLineEdit(os.path.splitext(os.path.basename(self.filepath))[0])
             self.format_label = QLabel("Format:")
             self.key_check = QCheckBox('Keys')
             self.type_check = QCheckBox('Types')
@@ -627,7 +642,7 @@ class ImportWizard(QWidget):
         self.deleteSelf()
 
     def deleteSelf(self):
-        self.parent.delete("Import Data")
+        self.parent.createImportTab(filepaths = self.filepaths)
 
     def updateConfirm(self):
         banned_names = [""]

@@ -71,24 +71,41 @@ def write_to_database(data, db_address, columnHeaders):
         createColumnQuery = ""
         for i in range(len(columnHeaders)):
             if (i < len(columnHeaders) - 1):
-                createColumnQuery += columnHeaders[i] + " " + dataTypes[i] + ", "
+                createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}, '
             else:
-                createColumnQuery += columnHeaders[i] + " " + dataTypes[i]
-        query("DROP TABLE IF EXISTS " + database + "." + table + ";")
-        query("CREATE DATABASE IF NOT EXISTS " + database + ";")
-        query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
+                createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}'
+        #query("DROP TABLE IF EXISTS " + database + "." + table + ";")
+        #query("CREATE DATABASE IF NOT EXISTS " + database + ";")
+        #query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
+        query(f'DROP TABLE IF EXISTS {database}.{table};')
+        query(f'CREATE DATABASE IF NOT EXISTS {database};')
+        query(f'CREATE TABLE {database}.{table} ({createColumnQuery});')
         for data_row in data:
             row = [data_item.lstrip() for data_item in data_row]
-            columnQuery = ""
-            valueQuery = ""
-            for i in range(len(columnHeaders)):
-                if (i < len(columnHeaders) - 1):
-                    columnQuery += columnHeaders[i] + ", "
-                    valueQuery += "\"" + row[i] + "\", "
+            row_buffer = []
+            for item in row:
+                print(f'.{item}.')
+                if item == 'None':
+                    print("None item")
+                    row_buffer.append('NULL')
                 else:
-                    columnQuery += columnHeaders[i]
-                    valueQuery += "\"" + row[i] + "\""
-            query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+                    row_buffer.append(item)
+            row = row_buffer
+            columnQueryList = []
+            valueQueryList = []
+            separator = ", "
+            for i in range(len(columnHeaders)):
+                columnQueryList.append(f'{columnHeaders[i]}')
+                if row[i] == 'NULL':
+                    valueQueryList.append(f'{row[i]}')
+                else:
+                    valueQueryList.append(f'\"{row[i]}\"')
+            columnQuery = separator.join(columnQueryList)
+            valueQuery = separator.join(valueQueryList)
+            print(columnQuery)
+            print(valueQuery)
+            ##query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
+            query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
     else:
         print(f'{db_address} is not a valid db_address')
 
@@ -102,7 +119,7 @@ def download_csv_from_database(filepath, db_address):
 def column_data(db_address, column_name): # Returns json.loads data
     database = db_address[0]
     table = db_address[1]
-    query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' and COLUMN_NAME=\'{column_name}\' ORDER BY ORDINAL_POSITION')
+    query_output = query(f'select * from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME = \'{table}\' and table_schema = \'{database}\' and COLUMN_NAME = \'{column_name}\' ORDER BY ORDINAL_POSITION')
     dict_output = dict()
 
     columns = [column[0] for column in query_output.description]
