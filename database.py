@@ -74,9 +74,6 @@ def write_to_database(data, db_address, columnHeaders):
                 createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}, '
             else:
                 createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}'
-        #query("DROP TABLE IF EXISTS " + database + "." + table + ";")
-        #query("CREATE DATABASE IF NOT EXISTS " + database + ";")
-        #query("CREATE TABLE " + database + "." + table + " (" + createColumnQuery + ");")
         query(f'DROP TABLE IF EXISTS {database}.{table};')
         query(f'CREATE DATABASE IF NOT EXISTS {database};')
         query(f'CREATE TABLE {database}.{table} ({createColumnQuery});')
