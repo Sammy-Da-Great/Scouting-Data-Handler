@@ -1273,27 +1273,17 @@ class SettingItem(QWidget):
     def set_data(self, data):
         self.field.setText(data)
 
-class License(QWidget):
+class License(QTextBrowser):
     def __init__(self, parent):
         super(QWidget, self).__init__()
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
-        self.scroll = ScrollLabel()
 
-        self.scroll.setText(database.get_license())
+        self.setMarkdown(database.get_license())
 
-        self.layout.addWidget(self.scroll)
-
-class ReadMe(QWidget):
+class ReadMe(QTextBrowser):
     def __init__(self, parent):
         super(QWidget, self).__init__()
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
-        self.scroll = ScrollLabel()
 
-        self.scroll.setText(database.get_readme())
-
-        self.layout.addWidget(self.scroll)
+        self.setMarkdown(database.get_readme())
 
 class DraggableGroupBox(QGroupBox):
     def __init__(self, parent, heightVar):

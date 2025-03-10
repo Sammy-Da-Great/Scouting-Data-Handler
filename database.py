@@ -178,15 +178,14 @@ def test(filepath):
 
 def get_license():
     text = ""
-    with open("LICENSE", 'r') as stream:
+    with open("LICENSE.md", 'r') as stream:
         lines = stream.readlines()
         text = "".join(lines)
     return(text)
 
 def get_readme():
     text = ""
-    with open("README", 'r') as stream:
+    with open("README.md", 'r') as stream:
         lines = stream.readlines()
         text = "".join(lines)
     return(text)
-    
