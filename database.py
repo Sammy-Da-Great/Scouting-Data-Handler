@@ -27,6 +27,7 @@ def query(query_text, input_data = ""): # cursor
         host = config.host,
         user = config.user,
         password = config.password,
+        database = database_name,
         buffered=True
     )
     cursor = mydb.cursor()
@@ -136,10 +137,20 @@ def datatypes(db_address): # string[]
     return [tupleData[1] for tupleData in columns_and_datatypes(db_address)]
 
 def columns_and_datatypes(db_address): # (name (string), datatype (string), size(int))
-    database = db_address[0]
-    table = db_address[1]
-    data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' ORDER BY ORDINAL_POSITION').fetchall()
-    return data
+    if isinstance(db_address, tuple) or db_address is None:
+        database = db_address[0]
+        table = db_address[1]
+        data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'{table}\' and table_schema= \'{database}\' ORDER BY ORDINAL_POSITION').fetchall()
+        return data
+    elif isinstance(db_address, str): #passing a string for a table
+        query('DROP TABLE IF EXISTS test;')
+        query(f'create table test ({db_address});')
+        data = query(f'select COLUMN_NAME, COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME=\'test\' ORDER BY ORDINAL_POSITION;').fetchall()
+        query('DROP TABLE IF EXISTS test;')
+        return data
+    else:
+        return None
+
 
 def get_dimensions(db_address): # Tuple (entry count (int), key count (int))
     database = db_address[0]
@@ -165,6 +176,7 @@ def read_csv(filepath):
     with open(filepath, 'r') as stream:
         for rowdata in csv.reader(stream):
             data.append(rowdata)
+    print(data)
     return data
 
 def write_csv(filepath, data):
@@ -189,3 +201,45 @@ def get_readme():
         lines = stream.readlines()
         text = "".join(lines)
     return(text)
+
+def get_sql_scripts():
+    filenames = [filename for (dirpath, dirname, filename) in os.walk('Queries')][0]
+    filepaths = [f'Queries/{filename}' for filename in filenames]
+    data = list(zip(filenames, filepaths))
+    return data
+
+def run_sql_script(filepath, parameters = None):
+    if filepath != None:
+        fd = open(filepath, 'r')
+        sqlFile = fd.read()
+        fd.close()
+
+        print(f'script: {sqlFile}')
+
+        sqlCommands = sqlFile.split(';')
+        sqlCommands = [command.replace('\n', ' ') for command in sqlCommands]
+        sqlCommands = list(filter(None, sqlCommands))
+        sqlCommands = [command for command in sqlCommands]
+        commands_data = []
+
+        print(f'scripts: {sqlCommands}')
+
+        for command in sqlCommands:
+            print(f'trying: {command}')
+            query_data = []
+            try:
+                query_data = query(command).fetchall()
+            except:
+                print(f'Query does not return table')
+
+            if query_data != []:
+                query_data = [list(item) for item in query_data]
+
+                command_data = [list(item) for item in zip(*columns_and_datatypes(command))]
+
+                for item in query_data:
+                    command_data.append([str(item_var) for item_var in item])
+                commands_data.append(command_data)
+        return commands_data
+    else:
+        return None
