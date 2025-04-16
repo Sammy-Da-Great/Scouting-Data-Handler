@@ -392,7 +392,7 @@ class MenuBar(QWidget):
         
         #
         editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
-        merge_tabs = self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.tabs.createConcatTab())
+        merge_tabs = self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
         modify_keys = self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
         data_button = self.create_toolbar_button("Data", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
         settings_button = self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
@@ -701,8 +701,6 @@ class ImportWizard(QStackedWidget):
         if filepaths != None:
             self.parent.setCurrentWidget(self)
 
-        
-
 class ModifyWizard(QWidget):
     def __init__(self, parent, data, db_address, tab, name):
         super(QWidget, self).__init__(parent)
@@ -1004,7 +1002,25 @@ class PresetDropdown(PresetParameterValue):
             pair_layout.addWidget(item)
         return(pair_layout)
 
-class ConcatWizard(QWidget):
+class ConcatWizard(QStackedWidget):
+    def __init__(self, parent):
+        super(QStackedWidget, self).__init__(parent)
+        self.parent = parent
+        self.currentChanged.connect(lambda: self.menuCompleted())
+
+    def menuCompleted(self):
+        if self.count() > 0:
+            self.setCurrentIndex(0)
+        else:
+            self.parent.setCurrentWidget(self.parent.tabs)
+
+    def createMenu(self):
+        if self.count() <= 0:
+            self.addWidget(ConcatMenu(self))
+        self.setCurrentIndex(0)
+        self.parent.setCurrentWidget(self)
+
+class ConcatMenu(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
 
@@ -1013,7 +1029,7 @@ class ConcatWizard(QWidget):
         self.setAutoFillBackground(True)
 
         self.parent = parent
-
+        self.tabs = self.parent.parent.tabs
 
         #
         self.sidebar = QVBoxLayout()
@@ -1044,50 +1060,37 @@ class ConcatWizard(QWidget):
         self.format.currentTextChanged.connect(lambda: self.updateList())
         
 
-        #self.tab_name.textChanged[str].connect(self.updateConfirm)
-        self.confirm_step_1 = QPushButton("Confirm")
-        self.confirm_step_1.clicked.connect(lambda: self.confirm())
-        #self.confirm_step_1.clicked.connect(self.confirm)
-        self.sidebar.addWidget(self.confirm_step_1)
+        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button.clicked.connect(lambda: self.confirm())
+        self.sidebar.addWidget(self.confirm_button)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(lambda: self.deleteSelf())
+        self.sidebar.addWidget(self.cancel_button)
 
         self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
-        self.tab_name.textChanged.connect(lambda: self.confirm_step_1.setEnabled(not(self.parent.test(self.tab_name.text()))))
+        self.tab_name.textChanged.connect(lambda: self.confirm_button.setEnabled(not(self.tabs.test(self.tab_name.text()))))
 
         self.updateList()
 
     def confirm(self):
-        formatList = self.parent.tabData(self.format.currentText(), keys=True)[1][0:2]
+        formatList = self.tabs.tabData(self.format.currentText(), keys=True)[1][0:2]
 
         data = []
 
         for tab_index in range(self.chosen_items.count()):
             tab_name = self.chosen_items.item(tab_index).text()
-            tab_data = self.parent.tabData(tab_name, keys=False)[1][1:]
+            tab_data = self.tabs.tabData(tab_name, keys=False)[1][1:]
             data.extend(tab_data)
-
-
-        # REMOVE DUPLICATES
-
-        # data = self.uniqueData(data)
-        #
 
         data = [*formatList, *data]
 
-        self.parent.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
+        self.tabs.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
         self.deleteSelf()
 
-    def uniqueData(self, data):
-        data_dict = {}
-        for row in data:
-            data_dict[row[0]] = row
-        return(list(data_dict.values()))
-
     def deleteSelf(self):
-        self.parent.delete("Merge Data")
-
-
-
+        self.deleteLater()
 
     def updateList(self):
         self.possible_items.clear()
@@ -1100,8 +1103,8 @@ class ConcatWizard(QWidget):
         return(dropdown)
 
     def dataTabs(self, formatTab = None):
-        tabs = [*self.parent.tablist]
-        tabs = list(filter((lambda tabname: self.parent.tablist[tabname][2] == "DataTab"), tabs))
+        tabs = [*self.tabs.tablist]
+        tabs = list(filter((lambda tabname: self.tabs.tablist[tabname][2] == "DataTab"), tabs))
         if formatTab != None:
             tabs = list(map(lambda tabname: (tabname, self.data(tabname)[0]), tabs))
             tabs = list(filter((lambda tab: tab[1] == self.data(formatTab)[0]), tabs))
@@ -1109,7 +1112,7 @@ class ConcatWizard(QWidget):
         return(tabs)
 
     def data(self, name):
-        return(self.parent.tabData(name, keys=True)[1])
+        return(self.tabs.tabData(name, keys=True)[1])
 
 class ScrollLabel(QScrollArea):
 
@@ -1180,12 +1183,14 @@ class MenuManager(QStackedWidget):
         self.license = License(self)
         self.readme = ReadMe(self)
         self.importwizard = ImportWizard(self)
+        self.concatWizard = ConcatWizard(self)
 
         self.addWidget(self.tabs)
         self.addWidget(self.settings)
         self.addWidget(self.license)
         self.addWidget(self.readme)
         self.addWidget(self.importwizard)
+        self.addWidget(self.concatWizard)
 
         self.setCurrentWidget(self.tabs)
 
@@ -1395,9 +1400,6 @@ class DraggableGroupBox(QGroupBox):
 
     def deleteWidget(self, widget):
         sip.delete(widget)
-
-
-
 
 
 
