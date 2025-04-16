@@ -176,7 +176,6 @@ def read_csv(filepath):
     with open(filepath, 'r') as stream:
         for rowdata in csv.reader(stream):
             data.append(rowdata)
-    print(data)
     return data
 
 def write_csv(filepath, data):

@@ -32,7 +32,7 @@ import tba_api
 from datetime import datetime
 import sip
 
-version = "2025.4.4"
+version = "2025.4.16"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -153,26 +153,6 @@ class Tabs(QWidget):
         content = DataTab(self, data, filepath, tab)
         layoutGrid.addWidget(content)
 
-    def createImportTab(self, filepaths = None):
-        if self.test("Import Data"): #Multiple tabs with the name name cannot exist
-            self.delete("Import Data")
-
-        if filepaths == None:
-            filepaths = SaveFile.file_dialog(self, many = True)
-        if filepaths != None:
-            if len(filepaths) > 0:
-
-                tab = self.add("Import Data", tab_type = "ImportTab")
-                layoutGrid = QGridLayout()
-                tab.setLayout(layoutGrid)
-                tab.setAutoFillBackground(True)
-
-                tab = QWidget()
-
-                content = ImportWizard(self, filepaths, tab)
-
-                layoutGrid.addWidget(content)
-
     def createConcatTab(self):
         if self.test("Merge Data"): #Multiple tabs with the name name cannot exist
             self.delete("Merge Data")
@@ -282,7 +262,6 @@ class Tabs(QWidget):
                 return(dictionary[name][2])
         else:
             return(False)
-
 
     def tabData(self, name, parent = None, keys = False, dictionary=tablist):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -435,7 +414,7 @@ class MenuBar(QWidget):
         export_dropdown = self.create_toolbar_dropdown("Data Export", database_dropdown)
         self.database_dropdowns(database_names, export_dropdown)
 
-        import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.tabs.createImportTab())
+        import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.parent.menus.importwizard.importData())
         # Validation
         validation_drop = self.create_toolbar_dropdown("Query", menuBar)
         saved_queries_drop = self.create_toolbar_dropdown("SQL Queries", menuBar)
@@ -544,25 +523,19 @@ class SaveSQLAsDialog(QDialog):
         self.layout.addWidget(self.dialogButtons)
         self.show()
 
-class ImportWizard(QWidget):
-    def __init__(self, parent, filepaths, tab):
+class ImportMenu(QWidget):
+    def __init__(self, parent, filepath):
         super(QWidget, self).__init__(parent)
 
         self.layoutGrid = QGridLayout(self)
         self.setLayout(self.layoutGrid)
         self.setAutoFillBackground(True)
 
-        self.tab = tab
-
         self.parent = parent
 
-        self.filepath = filepaths[0]
-        self.filepaths = filepaths
+        self.filepath = filepath
         label = QLabel(self.filepath)
-        if len(self.filepaths) >= 2:
-            self.filepaths = filepaths[1:]
-        else:
-            self.filepaths = []
+
         self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         #####
@@ -594,9 +567,13 @@ class ImportWizard(QWidget):
             self.sidebar.addWidget(self.type_check)
 
             self.tab_name.textChanged[str].connect(self.updateConfirm)
-            self.confirm_step_1 = QPushButton("Confirm")
-            self.confirm_step_1.clicked.connect(self.confirm)
-            self.sidebar.addWidget(self.confirm_step_1)
+            self.confirm_button = QPushButton("Confirm")
+            self.confirm_button.clicked.connect(self.confirm)
+            self.sidebar.addWidget(self.confirm_button)
+
+            self.cancel_button = QPushButton("Cancel")
+            self.cancel_button.clicked.connect(self.deleteSelf)
+            self.sidebar.addWidget(self.cancel_button)
 
             self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
@@ -618,7 +595,6 @@ class ImportWizard(QWidget):
                 
     def updateTable(self):
         rowIndex = 0
-        #print("update")
         if self.key_check.isChecked() == True:
             for x in range(0, len(self.data[0])):
                 self.table.item(0, x).setText(str(self.data[rowIndex][x]))
@@ -668,19 +644,19 @@ class ImportWizard(QWidget):
 
         data_confirmed = [keys, types, *data_buffer]
 
-        self.parent.createDataTabFromList(self.tab_name.text(), data_confirmed, self.filepath, (None, None))
+        self.parent.parent.tabs.createDataTabFromList(self.tab_name.text(), data_confirmed, self.filepath, (None, None))
         self.deleteSelf()
 
     def deleteSelf(self):
-        self.parent.createImportTab(filepaths = self.filepaths)
+        self.deleteLater()
 
     def updateConfirm(self):
         banned_names = [""]
 
-        if (self.parent.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
-            self.confirm_step_1.setEnabled(False)
+        if (self.parent.parent.tabs.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
+            self.confirm_button.setEnabled(False)
         else:
-            self.confirm_step_1.setEnabled(True)
+            self.confirm_button.setEnabled(True)
 
     def clearSidebar(self):
         layout = self.sidebar
@@ -695,6 +671,37 @@ class ImportWizard(QWidget):
             item.setFlags(defaultFlags & Qt.ItemIsSelectable)
         else:
             item.setFlags(defaultFlags)
+
+class ImportWizard(QStackedWidget):
+    def __init__(self, parent):
+        super(QStackedWidget, self).__init__(parent)
+        self.parent = parent
+        self.currentChanged.connect(lambda: self.menuCompleted())
+
+    def menuCompleted(self):
+        if self.count() > 0:
+            self.setCurrentIndex(0)
+        else:
+            self.parent.setCurrentWidget(self.parent.tabs)
+
+    def importData(self, filepaths = None):
+
+        if self.count() <= 0:
+            for index in range(self.count()):
+                self.widget(index).deleteLater()
+
+            if filepaths == None:
+                filepaths = SaveFile.file_dialog(self, many = True)
+            if filepaths != None:
+                if len(filepaths) > 0:
+                    for filepath in filepaths:
+                        self.addWidget(ImportMenu(self, filepath))
+            self.setCurrentIndex(0)
+        
+        if filepaths != None:
+            self.parent.setCurrentWidget(self)
+
+        
 
 class ModifyWizard(QWidget):
     def __init__(self, parent, data, db_address, tab, name):
@@ -936,14 +943,6 @@ class PresetSelector(QFrame):
                 for key in keys_list:
                     values.append(None)
 
-            '''for key, value in zip(keys_list, values):
-                label = QLabel(f"{key}:")
-                dropdown = self.parent.dropdownMenu(self.parent.data[0])
-                if value != None:
-                    dropdown.setCurrentText(value)
-                group = self.parent.pairItems([label, dropdown])
-                self.keys_layout.addWidget(group)'''
-
             for key, constant, value in zip(keys_list, constant_list, values):
                 if constant:
                     self.keys_layout.addWidget(PresetConstant(self, key, value))
@@ -1180,11 +1179,13 @@ class MenuManager(QStackedWidget):
         self.settings = Settings(self)
         self.license = License(self)
         self.readme = ReadMe(self)
+        self.importwizard = ImportWizard(self)
 
         self.addWidget(self.tabs)
         self.addWidget(self.settings)
         self.addWidget(self.license)
         self.addWidget(self.readme)
+        self.addWidget(self.importwizard)
 
         self.setCurrentWidget(self.tabs)
 
