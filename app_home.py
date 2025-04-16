@@ -32,7 +32,7 @@ import tba_api
 from datetime import datetime
 import sip
 
-version = "2025.3.17"
+version = "2025.4.4"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -42,7 +42,6 @@ class Window(QMainWindow):
         self.setWindowTitle(f'Scouting Data Handler v{version}')
         self.setWindowIcon(QtGui.QIcon('Images/logo.png'))
         self.resize(1000, 500)
-        self.showMaximized()
 
         self.menus = MenuManager(self)
         self.tabs = self.menus.tabs #Tabs(self)
@@ -53,6 +52,8 @@ class Window(QMainWindow):
         self.setCentralWidget(self.menus)
 
         self.layout = QGridLayout()
+
+        self.showMaximized()
 
 class Tabs(QWidget):
     def __init__(self, parent):
@@ -441,9 +442,10 @@ class MenuBar(QWidget):
         tba_drop = self.create_toolbar_dropdown("TBA", validation_drop)
         tba_import_drop = self.create_toolbar_dropdown("Import Data", tba_drop)
 
-        self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_team_data('2025wasno'), '', (None, None)))
-        self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_data('2025wasno'), '', (None, None)))
-        self.create_toolbar_button('Request Matches (Teams)', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_teams('2025wasno'), '', (None, None)))
+        self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_team_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
+        self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
+        self.create_toolbar_button('Request Matches (Teams)', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_teams(config_maker.read_global_config().current_competition_key), '', (None, None)))
+        self.create_toolbar_button('Request Coral From Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.get_coral_from_each_match(config_maker.read_global_config().current_competition_key), '', (None, None)))
 
         for sql_script in database.get_sql_scripts():
             filename = sql_script[0]
@@ -707,6 +709,7 @@ class ModifyWizard(QWidget):
         self.data = data
         
         self.heightVar = 200
+        
 
         self.scroll_area = QScrollArea()
         self.sidebar = DraggableGroupBox(self, self.heightVar)
@@ -765,19 +768,15 @@ class ModifyWizard(QWidget):
         name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
         if name != "":
             data = mph.readConversion(name)
-            if all([(data_item in self.data[0]) for data_item in data['format']]):
-                #Delete Current Conversion
-                widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-                for widget in widgets:
-                    self.deleteWidget(widget)
+            #Delete Current Conversion
+            widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+            for widget in widgets:
+                self.deleteWidget(widget)
 
-                #Load Conversion
-                for row in data['rows']:
-                    self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
-                print(data['rows'])
-            else:
-                #Return exception
-                print("Exception")
+            #Load Conversion
+            for row in data['rows']:
+                self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
+            print(data['rows'])
 
     def saveConversion(self):
         name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
@@ -1019,7 +1018,7 @@ class ConcatWizard(QWidget):
 
         #
         self.sidebar = QVBoxLayout()
-        self.tab_name = QLineEdit("test")
+        self.tab_name = QLineEdit("merged tabs")
         self.format_selector = QWidget()
         self.format_selector_layout = QHBoxLayout()
         self.format_selector.setLayout(self.format_selector_layout)
@@ -1071,7 +1070,7 @@ class ConcatWizard(QWidget):
 
         # REMOVE DUPLICATES
 
-        data = self.uniqueData(data)
+        # data = self.uniqueData(data)
         #
 
         data = [*formatList, *data]
@@ -1226,7 +1225,9 @@ class Settings(QWidget):
         self.config_items['host'] = SettingItem(self, 'Host', set_data= self.global_config['host'])
         self.config_items['user'] = SettingItem(self, 'User', set_data= self.global_config['user'])
         self.config_items['password'] = SettingItem(self, 'Password', set_data= self.global_config['password'], echomode= QLineEdit.Password)
-        self.config_items['database'] = SettingItem(self, 'Database Name', set_data= self.global_config['database'])
+        self.config_items['database_name'] = SettingItem(self, 'Database Name', set_data= self.global_config['database_name'])
+        self.config_items['table_name'] = SettingItem(self, 'Table Name', set_data= self.global_config['table_name'])
+        self.config_items['current_competition_key'] = SettingItem(self, 'Current Comp Key', set_data= self.global_config['current_competition_key'])
         self.config_items['tba_key'] = SettingItem(self, 'TBA Key', set_data= self.global_config['tba_key'])
 
         for key in self.config_items.keys():
@@ -1247,7 +1248,7 @@ class Settings(QWidget):
 
     def confirm(self):
         self.global_config = self.getConfig()
-        config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database', 'tba_key']]), "global_config.json")
+        config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database_name', 'table_name', 'current_competition_key', 'tba_key']]), "global_config.json")
         database.read_config()
 
         self.exit()
@@ -1277,7 +1278,9 @@ class Settings(QWidget):
         buffer['host'] = buffer_config.host
         buffer['user'] = buffer_config.user
         buffer['password'] = buffer_config.password
-        buffer['database'] = buffer_config.database_name
+        buffer['database_name'] = buffer_config.database_name
+        buffer['table_name'] = buffer_config.table_name
+        buffer['current_competition_key'] = buffer_config.current_competition_key
         buffer['tba_key'] = buffer_config.tba_key
 
         return(buffer)

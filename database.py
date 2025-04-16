@@ -83,7 +83,7 @@ def write_to_database(data, db_address, columnHeaders):
             row_buffer = []
             for item in row:
                 print(f'.{item}.')
-                if item == 'None':
+                if item == 'None' or item == '':
                     print("None item")
                     row_buffer.append('NULL')
                 else:

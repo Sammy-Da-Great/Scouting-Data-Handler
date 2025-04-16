@@ -12,4 +12,11 @@ data_type = "smallint unsigned"
 constants = []
 
 def funct(a, b):
-    return (int(a) + int(b))
+    if a is None and b is None:
+        return(None)
+    else:
+        if a is None:
+            a = 0
+        if b is None:
+            b = 0
+        return (int(a) + int(b))

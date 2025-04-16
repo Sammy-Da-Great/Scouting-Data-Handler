@@ -14,8 +14,8 @@ constants = []
 def funct(boolean):
     boolean_buffer = str(boolean)
     
-    true_list = ["True", "true", "1"]
-    false_list = ["False", "false", "0"]
+    true_list = ["True", "TRUE", "true", "1"]
+    false_list = ["False", "FALSE", "false", "0"]
     
     if boolean_buffer in true_list:
         boolean_buffer = "1"

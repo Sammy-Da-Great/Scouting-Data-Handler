@@ -60,7 +60,13 @@ def readConversion(filepath):
 
 def runFunct(parameters, file, custom = False):
     funct = getFunct(file, custom)
-    return(funct(*parameters))
+    parameters_buffer = []
+    for parameter in parameters:
+        if parameter == "None" or parameter == '':
+            parameters_buffer.append(None)
+        else:
+            parameters_buffer.append(parameter)
+    return(funct(*parameters_buffer))
     
 def getFunct(file, custom = False):
     return(getModule(file, custom)[1])
@@ -136,7 +142,12 @@ def runConversion(convert_data, data, constants):
                         parameter_buffer = parameter[0]
                     parameters.append(parameter_buffer) 
 
-                row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
+                try:
+                    row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
+                except Exception as e:
+                    row.append("ERROR")
+                    print(f"preset {conversion['preset']} experienced an error with parameters: {parameters}")
+
 
             row = [str(row_item) for row_item in row]
             data_rows.append(row)

@@ -7,7 +7,7 @@ def tba_request(url, key = None):
     r = requests.get(url, headers={'X-TBA-Auth-Key':key})
     return r.json()
 
-def generate_team_data(event_key, key = None):
+def generate_team_data(event_key = None, key = None):
     data = [['team_num']]
     data.append(['smallint(45)'])
     r = tba_request(f'https://www.thebluealliance.com/api/v3/event/{event_key}/teams/simple', key)
@@ -32,14 +32,48 @@ def generate_match_data(event_key, key = None):
     return data + data_buffer
 
 def generate_match_teams(event_key, key = None):
-    data = [['match_num', 'team_number']]
-    data.append(['smallint(45)', 'smallint(45)'])
+    data = [['match_num', 'competition', 'team_number', 'alliance']]
+    data.append(['smallint(45)', 'varchar(45)', 'smallint(45)', 'varchar(45)'])
     data_buffer = []
     r = tba_request(f'https://www.thebluealliance.com/api/v3/event/{event_key}/matches/simple', key)
     for item in r:
         if item['comp_level'] == 'qm':
-            for team in item['alliances']['red']['team_keys'] + item['alliances']['blue']['team_keys']:
-                print(int(item['match_number']))
-                data_buffer.append([int(item['match_number']), str(team).replace('frc', '')])
+            for team in item['alliances']['red']['team_keys']:
+                data_buffer.append([int(item['match_number']), event_key, str(team).replace('frc', ''), "red"])
+            for team in item['alliances']['blue']['team_keys']:
+                data_buffer.append([int(item['match_number']), event_key, str(team).replace('frc', ''), "blue"])
+    data_buffer.sort(key = lambda sublist: sublist[0])
+    return data + data_buffer
+
+def get_coral_from_each_match(event_key, key = None):
+    if key == None:
+        key = config_maker.read_global_config().tba_key
+    data = [['match_number', 'competition', 'red_auto_coral_l1', 'red_auto_coral_l2', 'red_auto_coral_l3', 'red_auto_coral_l4', 'red_tele_coral_l1', 'red_tele_coral_l2', 'red_tele_coral_l3', 'red_tele_coral_l4', 'blue_auto_coral_l1', 'blue_auto_coral_l2', 'blue_auto_coral_l3', 'blue_auto_coral_l4', 'blue_tele_coral_l1', 'blue_tele_coral_l2', 'blue_tele_coral_l3', 'blue_tele_coral_l4']]
+    data.append(['smallint(45)', 'varchar(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)', 'smallint(45)'])
+    data_buffer = []
+    r = tba_request(f'https://www.thebluealliance.com/api/v3/event/{event_key}/matches', key)
+    for item in r:
+        if item['comp_level'] == 'qm':
+            data_buffer_buffer = []
+            data_buffer_buffer.append(item['match_number'])
+            data_buffer_buffer.append(event_key)
+
+            if not(item['score_breakdown'] is None):
+
+                red = item['score_breakdown']['red']
+                blue = item['score_breakdown']['blue']
+
+                for alliance in [red, blue]:
+                    data_buffer_buffer.append(alliance['autoReef']['trough'])
+                    data_buffer_buffer.append(alliance['autoReef']['tba_botRowCount'])
+                    data_buffer_buffer.append(alliance['autoReef']['tba_midRowCount'])
+                    data_buffer_buffer.append(alliance['autoReef']['tba_topRowCount'])
+                    data_buffer_buffer.append(alliance['teleopReef']['trough'])
+                    data_buffer_buffer.append(alliance['teleopReef']['tba_botRowCount'])
+                    data_buffer_buffer.append(alliance['teleopReef']['tba_midRowCount'])
+                    data_buffer_buffer.append(alliance['teleopReef']['tba_topRowCount'])
+                
+                data_buffer.append(data_buffer_buffer)
+    
     data_buffer.sort(key = lambda sublist: sublist[0])
     return data + data_buffer

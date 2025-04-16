@@ -12,4 +12,10 @@ data_type = "varchar(45)"
 constants = ["prefix", "suffix"]
 
 def funct(prefix, column, suffix):
+    if prefix is None:
+        prefix = ""
+    if suffix is None:
+        suffix = ""
+    if column is None:
+        column = ""
     return (prefix + column + suffix)
