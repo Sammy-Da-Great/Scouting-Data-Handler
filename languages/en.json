@@ -43,6 +43,14 @@
     "key_header": "Key",
     "keys": "Keys",
     "datatype_header": "Type",
-    "datatypes": "Types"
+    "datatypes": "Types",
 
+    "name": "Name",
+    "tab_name": "Tab Name",
+    "key": "Key",
+    "modify_keys": "Modify Keys",
+    "direct": "Direct",
+    "open_presets_folder": "Open Presets Folder",
+    "save_conversion": "Save Conversion",
+    "load_conversion": "Load Conversion"
 }

@@ -483,7 +483,7 @@ class DataTab(QWidget):
         data.pop(0)
 
         header_v_text = [str(row[0]) for row in data]
-        header_v_text[0] = "data type"
+        header_v_text[0] = tr("datatypes")
         table.setVerticalHeaderLabels(header_v_text)
 
         layoutGrid = QGridLayout()
@@ -731,25 +731,26 @@ class ModifyWizard(QWidget):
 
         self.nameInput = QLineEdit()
 
-        self.directButton = QPushButton("Direct")
+        self.directButton = QPushButton(tr("direct"))
         self.directButton.clicked.connect(lambda: self.directConversion())
 
-        self.openPresetsButton = QPushButton("Open Presets Folder")
+        self.openPresetsButton = QPushButton(tr("open_presets_folder"))
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
-        self.confirmButton = QPushButton("Confirm")
+        self.confirmButton = QPushButton(tr("button_confirm"))
         self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
 
         self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.test(self.nameInput.text()))))
+        self.nameInput.setPlaceholderText(tr("tab_name"))
 
-        self.saveConversionButton = QPushButton("Save Conversion")
+        self.saveConversionButton = QPushButton(tr("save_conversion"))
         self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
 
-        self.loadConversionButton = QPushButton("Load Conversion")
+        self.loadConversionButton = QPushButton(tr("load_conversion"))
         self.loadConversionButton.clicked.connect(lambda: self.loadConversion())
         
 
         self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
-        self.layoutGrid.addWidget(self.pairItems([QLabel("Name:"), self.nameInput]), 1, 0)
+        self.layoutGrid.addWidget(self.nameInput, 1, 0)
 
         self.layoutGrid.addWidget(self.scroll_area, 2, 0)
 
@@ -757,7 +758,7 @@ class ModifyWizard(QWidget):
 
     def saveData(self, name, data):
         self.parent.createDataTabFromList(name, data, None, (None, None))
-        self.parent.delete("Modify Data")
+        self.parent.delete(tr("modify_menu"))
 
     def directConversion(self):
         if self.sidebar_layout.count():
@@ -873,6 +874,7 @@ class PresetSelector(QFrame):
         self.setFixedHeight(size)
 
         self.key_entry = QLineEdit(key)
+        self.key_entry.setPlaceholderText(tr("key"))
         self.delete_button = QPushButton("-")
         self.delete_button.clicked.connect(lambda: self.delete())
         self.delete_button.setFixedWidth(40)
@@ -897,7 +899,7 @@ class PresetSelector(QFrame):
         self.layout.addWidget(self.selector_dropdown)
         self.layout.addWidget(self.keys)
 
-        self.updateSelector(values=keylist)
+        self.updateSelector(values = keylist)
 
     def key(self):
         return(self.key_entry.text())
@@ -929,7 +931,6 @@ class PresetSelector(QFrame):
 
     def updateKeys(self, delete = True, values = None):
         if self.selector_dropdown.currentText() != "":
-            #print(f"filename: {self.selector_dropdown.currentText()}")
             params = mph.getParams(self.selector_dropdown.currentText(), custom = (self.custom_dropdown.currentText() == "Custom"))
             keys_list = params[0]
             constant_list = [key in params[1] for key in keys_list]

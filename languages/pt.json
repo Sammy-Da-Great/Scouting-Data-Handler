@@ -21,7 +21,7 @@
     "export_data": "Exportar Dados",
     "import_data": "Importar Dados",
     "query": "Pesquisar",
-    "SQL_query": "SQL Queries",
+    "SQL_query": "Pesquisas de SQL",
     "TBA_query": "TBA",
     "help_menu": "Ayuda",
     "about_menu": "Sobre",
@@ -43,6 +43,14 @@
     "key_header": "Código",
     "keys": "Códigos",
     "datatype_header": "Tipo",
-    "datatypes": "Tipos"
+    "datatypes": "Tipos",
 
+    "name": "Nome",
+    "tab_name": "Nome da Aba",
+    "key": "Código",
+    "modify_keys": "Formatar Códigos",
+    "direct": "Preencher Automaticamente",
+    "open_presets_folder": "Abrir a Pasta das Conversão",
+    "save_conversion": "Salvar a Conversão",
+    "load_conversion": "Carregar uma Conversão"
 }
