@@ -102,7 +102,6 @@ def write_to_database(data, db_address, columnHeaders):
             valueQuery = separator.join(valueQueryList)
             print(columnQuery)
             print(valueQuery)
-            ##query("INSERT INTO " + database + "." + table + " (" + columnQuery + ") VALUES (" + valueQuery + ");")
             query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
     else:
         print(f'{db_address} is not a valid db_address')

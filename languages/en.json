@@ -1,0 +1,48 @@
+{
+    "title": "Scouting Data Handler",
+    "version_short": "v",
+
+    "button_confirm": "Confirm",
+    "button_cancel": "Cancel",
+
+    "label_database": "Database",
+    "file_dropdown": "File",
+    "exit": "Exit",
+    "edit_dropdown": "Edit",
+    "save_current_SQL": "Save Current Tab to SQL",
+    "save_current_SQL_as": "Save Current Tab as...",
+    "save_current_csv_as": "Save Current Tab as .csv as...",
+    "concat_menu": "Merge Tabs",
+    "modify_menu": "Modify Keys",
+    "data_menu": "Data",
+    "settings_menu": "Settings",
+    "database_dropdown": "Database",
+    "view": "View",
+    "export_data": "Data Export",
+    "import_data": "Data Import",
+    "query": "Query",
+    "SQL_query": "SQL Queries",
+    "TBA_query": "TBA",
+    "help_menu": "Help",
+    "about_menu": "About",
+    "license_menu": "License",
+
+    "merge_tabs_default_name": "Merged Tabs",
+    "format_selector": "Format:",
+
+    "host": "Host",
+    "user": "User",
+    "password": "Password",
+    "database_name": "Database Name",
+    "table_name": "Table Name",
+    "current_comp_key": "Current Comp Key",
+    "TBA_key": "TBA Key",
+    "language": "Language",
+    "restart_needed": "Some changes require restarting the app.",
+
+    "key_header": "Key",
+    "keys": "Keys",
+    "datatype_header": "Type",
+    "datatypes": "Types"
+
+}

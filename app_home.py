@@ -32,14 +32,16 @@ import tba_api
 from datetime import datetime
 import sip
 
-version = "2025.4.16"
+from language_manager import tr
+
+version = "2025.4.23"
 
 class Window(QMainWindow):
     """Main Window."""
     def __init__(self, parent=None):
         """Initializer."""
         super().__init__(parent)
-        self.setWindowTitle(f'Scouting Data Handler v{version}')
+        self.setWindowTitle(f'{tr("title")} {tr("version_short")}{version}')
         self.setWindowIcon(QtGui.QIcon('Images/logo.png'))
         self.resize(1000, 500)
 
@@ -171,8 +173,8 @@ class Tabs(QWidget):
                 layoutGrid.addWidget(content)
 
     def modifyTab(self):
-        if self.test("Modify Data"): #Multiple tabs with the name name cannot exist
-            self.delete("Modify Data")
+        if self.test(tr("modify_keys")): #Multiple tabs with the name name cannot exist
+            self.delete(tr("modify_keys"))
         name = self.tab_bar.tabText(self.tab_bar.currentIndex())
         if name != '':
             tab_type = self.tablist[name][2]
@@ -182,7 +184,7 @@ class Tabs(QWidget):
 
                 content = ModifyWizard(self, data[1], data[2], self.getCurrentTab(), name)
 
-                tab = self.add("Modify Data", tab_type = "ModifyTab")
+                tab = self.add(tr("modify_keys"), tab_type = "ModifyTab")
                 layoutGrid = QGridLayout()
                 tab.setLayout(layoutGrid)
                 tab.setAutoFillBackground(True)
@@ -319,11 +321,11 @@ class MenuBar(QWidget):
         table_name = db_address[1]
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
-        if action == "Data Export":
+        if action == tr("export_data"):
             file = SaveFile.file_save(self, file_name + ".csv")
             if file != "":
                 database.download_csv_from_database(file, db_address)
-        elif action == "View":
+        elif action == tr("view"):
             filepath = database.get_csv_from_database(category + file_name + ".csv", db_address)
             self.tabs.createDataTab(file_name, db_address, filepath)
         
@@ -381,21 +383,21 @@ class MenuBar(QWidget):
         menuBar.clear()
 
         #File
-        file_dropdown = self.create_toolbar_dropdown("File", menuBar)
+        file_dropdown = self.create_toolbar_dropdown(tr("file_dropdown"), menuBar)
 
-        self.saveActionSQL = self.create_toolbar_button("Save Current Tab to SQL", file_dropdown, lambda: self.tabs.saveCurrentTabSQL())
-        self.saveActionSQLAs = self.create_toolbar_button("Save Current Tab as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
-        self.saveActionCSV = self.create_toolbar_button("Save Current Tab as .csv as...", file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
-        self.exitAction = self.create_toolbar_button("Exit", file_dropdown, self.parent.close)
+        self.saveActionSQL = self.create_toolbar_button(tr("save_current_SQL"), file_dropdown, lambda: self.tabs.saveCurrentTabSQL())
+        self.saveActionSQLAs = self.create_toolbar_button(tr("save_current_SQL_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
+        self.saveActionCSV = self.create_toolbar_button(tr("save_current_csv_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
+        self.exitAction = self.create_toolbar_button(tr("exit"), file_dropdown, self.parent.close)
 
         file_dropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs.currentTabType(data_type = "DataTab")))
         
         #
-        editDropdown = self.create_toolbar_dropdown("Edit", menuBar)
-        merge_tabs = self.create_toolbar_button("Merge Tabs", editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
-        modify_keys = self.create_toolbar_button("Modify Keys", editDropdown, lambda: self.tabs.modifyTab())
-        data_button = self.create_toolbar_button("Data", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
-        settings_button = self.create_toolbar_button("Settings", editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
+        editDropdown = self.create_toolbar_dropdown(tr("edit_dropdown"), menuBar)
+        merge_tabs = self.create_toolbar_button(tr("concat_menu"), editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
+        modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.tabs.modifyTab())
+        data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
+        settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
 
         editDropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.parent.menus.tabs))
         editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [], self.parent.menus.tabs))
@@ -404,22 +406,22 @@ class MenuBar(QWidget):
         #Database
         database_names = database.get_all_databases()
 
-        database_dropdown = self.create_toolbar_dropdown("Database", menuBar)
+        database_dropdown = self.create_toolbar_dropdown(tr("database_dropdown"), menuBar)
 
         self.parent.menus.currentChanged.connect(lambda: self.parent.menus.disableItemsOnMenu([], [database_dropdown], self.parent.menus.tabs))
 
-        view_dropdown = self.create_toolbar_dropdown("View", database_dropdown)
+        view_dropdown = self.create_toolbar_dropdown(tr("view"), database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
 
-        export_dropdown = self.create_toolbar_dropdown("Data Export", database_dropdown)
+        export_dropdown = self.create_toolbar_dropdown(tr("export_data"), database_dropdown)
         self.database_dropdowns(database_names, export_dropdown)
 
-        import_button = self.create_toolbar_button("Data Import", database_dropdown, lambda: self.parent.menus.importwizard.importData())
+        import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.parent.menus.importwizard.importData())
         # Validation
-        validation_drop = self.create_toolbar_dropdown("Query", menuBar)
-        saved_queries_drop = self.create_toolbar_dropdown("SQL Queries", menuBar)
-        tba_drop = self.create_toolbar_dropdown("TBA", validation_drop)
-        tba_import_drop = self.create_toolbar_dropdown("Import Data", tba_drop)
+        validation_drop = self.create_toolbar_dropdown(tr("query"), menuBar)
+        saved_queries_drop = self.create_toolbar_dropdown(tr("SQL_query"), menuBar)
+        tba_drop = self.create_toolbar_dropdown(tr("TBA_query"), validation_drop)
+        tba_import_drop = self.create_toolbar_dropdown(tr("import_data"), tba_drop)
 
         self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_team_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
         self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
@@ -433,9 +435,9 @@ class MenuBar(QWidget):
 
 
         #
-        helpDropdown = self.create_toolbar_dropdown("Help", menuBar)
-        self.create_toolbar_button("About", helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.readme))
-        self.create_toolbar_button("License", helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.license))
+        helpDropdown = self.create_toolbar_dropdown(tr("help_menu"), menuBar)
+        self.create_toolbar_button(tr("about_menu"), helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.readme))
+        self.create_toolbar_button(tr("license_menu"), helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.license))
         #
 
     def manyDataCreateTab(self, filename, filepath):
@@ -548,15 +550,15 @@ class ImportMenu(QWidget):
             #table
             self.table = QTableWidget(4, key_number)
             self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            self.table.setVerticalHeaderLabels(["Key", "Type", "Datapoint 3", "Datapoint 4"])
+            self.table.setVerticalHeaderLabels([tr("key_header"), tr("datatype_header"), "Datapoint 1", "Datapoint 2"])
             self.layoutGrid.addWidget(self.table, 1, 1)
 
             #Checkboxes
             self.sidebar = QVBoxLayout()
             self.tab_name = QLineEdit(os.path.splitext(os.path.basename(self.filepath))[0])
-            self.format_label = QLabel("Format:")
-            self.key_check = QCheckBox('Keys')
-            self.type_check = QCheckBox('Types')
+            self.format_label = QLabel(tr("format_selector"))
+            self.key_check = QCheckBox(tr("keys"))
+            self.type_check = QCheckBox(tr("datatypes"))
             self.key_check.setChecked(True)
             self.type_check.setChecked(True)
             self.key_check.stateChanged.connect(self.updateTable)
@@ -567,11 +569,11 @@ class ImportMenu(QWidget):
             self.sidebar.addWidget(self.type_check)
 
             self.tab_name.textChanged[str].connect(self.updateConfirm)
-            self.confirm_button = QPushButton("Confirm")
+            self.confirm_button = QPushButton(tr("button_confirm"))
             self.confirm_button.clicked.connect(self.confirm)
             self.sidebar.addWidget(self.confirm_button)
 
-            self.cancel_button = QPushButton("Cancel")
+            self.cancel_button = QPushButton(tr("button_cancel"))
             self.cancel_button.clicked.connect(self.deleteSelf)
             self.sidebar.addWidget(self.cancel_button)
 
@@ -1033,11 +1035,11 @@ class ConcatMenu(QWidget):
 
         #
         self.sidebar = QVBoxLayout()
-        self.tab_name = QLineEdit("merged tabs")
+        self.tab_name = QLineEdit(tr("merge_tabs_default_name"))
         self.format_selector = QWidget()
         self.format_selector_layout = QHBoxLayout()
         self.format_selector.setLayout(self.format_selector_layout)
-        self.format_label = QLabel("Format:")
+        self.format_label = QLabel(tr("format_selector"))
 
         self.format = self.dropdownMenu(self.dataTabs())
         self.sidebar.addWidget(self.tab_name)
@@ -1060,11 +1062,11 @@ class ConcatMenu(QWidget):
         self.format.currentTextChanged.connect(lambda: self.updateList())
         
 
-        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button = QPushButton(tr("button_confirm"))
         self.confirm_button.clicked.connect(lambda: self.confirm())
         self.sidebar.addWidget(self.confirm_button)
 
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = QPushButton(tr("button_cancel"))
         self.cancel_button.clicked.connect(lambda: self.deleteSelf())
         self.sidebar.addWidget(self.cancel_button)
 
@@ -1162,18 +1164,6 @@ class QListDragAndDrop(QListWidget):
        self.setSortingEnabled(True)
        self.setAcceptDrops(True)
 
-class UnscrollableQComboBox(QComboBox):
-    def __init__(self, scrollWidget=None, *args, **kwargs):
-        super(UnscrollableQComboBox, self).__init__(*args, **kwargs)  
-        self.scrollWidget = scrollWidget
-        self.setFocusPolicy(Qt.StrongFocus)
-
-    def wheelEvent(self, *args, **kwargs):
-        if self.hasFocus():
-            return QComboBox.wheelEvent(self, *args, **kwargs)
-        else:
-            return self.scrollWidget.wheelEvent(*args, **kwargs)
-
 class MenuManager(QStackedWidget):
     def __init__(self, parent):
         super(QStackedWidget, self).__init__()
@@ -1228,24 +1218,31 @@ class Settings(QWidget):
         self.global_config = self.getGlobalConfig()
 
         self.config_items = {}
-        self.config_items['host'] = SettingItem(self, 'Host', set_data= self.global_config['host'])
-        self.config_items['user'] = SettingItem(self, 'User', set_data= self.global_config['user'])
-        self.config_items['password'] = SettingItem(self, 'Password', set_data= self.global_config['password'], echomode= QLineEdit.Password)
-        self.config_items['database_name'] = SettingItem(self, 'Database Name', set_data= self.global_config['database_name'])
-        self.config_items['table_name'] = SettingItem(self, 'Table Name', set_data= self.global_config['table_name'])
-        self.config_items['current_competition_key'] = SettingItem(self, 'Current Comp Key', set_data= self.global_config['current_competition_key'])
-        self.config_items['tba_key'] = SettingItem(self, 'TBA Key', set_data= self.global_config['tba_key'])
+        self.config_items['host'] = SettingItem(self, tr("host"), set_data= self.global_config['host'])
+        self.config_items['user'] = SettingItem(self, tr("user"), set_data= self.global_config['user'])
+        self.config_items['password'] = SettingItem(self, tr("password"), set_data= self.global_config['password'], echomode= QLineEdit.Password)
+        self.config_items['database_name'] = SettingItem(self, tr("database_name"), set_data= self.global_config['database_name'])
+        self.config_items['table_name'] = SettingItem(self, tr("table_name"), set_data= self.global_config['table_name'])
+        self.config_items['current_competition_key'] = SettingItem(self, tr("current_comp_key"), set_data= self.global_config['current_competition_key'])
+        self.config_items['tba_key'] = SettingItem(self, tr("TBA_key"), set_data= self.global_config['tba_key'])
+        self.config_items['language'] = SettingDropdownItem(self, tr("language"), self.global_config['language'], ['English', 'Português'], ['en', 'pt'])
 
         for key in self.config_items.keys():
             self.layout.addWidget(self.config_items[key])
+        
+        self.need_to_restart = QLabel(tr("restart_needed"))
+        self.layout.addWidget(self.need_to_restart)
+        self.need_to_restart.setVisible(False)
+
+        self.config_items['language'].field.currentIndexChanged.connect(lambda: self.need_to_restart.setVisible(True))
 
         self.buttons = QWidget()
         self.buttons_layout = QHBoxLayout()
         self.buttons.setLayout(self.buttons_layout)
 
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = QPushButton(tr("button_cancel"))
         self.cancel_button.clicked.connect(lambda: self.cancel())
-        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button = QPushButton(tr("button_confirm"))
         self.confirm_button.clicked.connect(lambda: self.confirm())
 
         self.buttons_layout.addWidget(self.cancel_button)
@@ -1254,8 +1251,11 @@ class Settings(QWidget):
 
     def confirm(self):
         self.global_config = self.getConfig()
-        config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database_name', 'table_name', 'current_competition_key', 'tba_key']]), "global_config.json")
+        config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database_name', 'table_name', 'current_competition_key', 'tba_key', 'language']]), "global_config.json")
         database.read_config()
+
+        if self.need_to_restart.isVisible():
+            self.parent.parent.close()
 
         self.exit()
 
@@ -1288,6 +1288,7 @@ class Settings(QWidget):
         buffer['table_name'] = buffer_config.table_name
         buffer['current_competition_key'] = buffer_config.current_competition_key
         buffer['tba_key'] = buffer_config.tba_key
+        buffer['language'] = buffer_config.language
 
         return(buffer)
 
@@ -1310,6 +1311,31 @@ class SettingItem(QWidget):
 
     def set_data(self, data):
         self.field.setText(data)
+
+class SettingDropdownItem(QWidget):
+    def __init__(self, parent, label_text, set_data, option_data, return_data):
+        super(QWidget, self).__init__()
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.return_data = return_data
+
+        self.label = QLabel(f'{label_text}:')
+        self.layout.addWidget(self.label)
+
+
+        self.field = UnscrollableQComboBox(option_data)
+        for item in option_data:
+            self.field.addItem(item)
+
+        self.set_data(set_data)
+
+        self.layout.addWidget(self.field)
+
+    def get_data(self):
+        return(self.return_data[self.field.currentIndex()])
+
+    def set_data(self, data):
+        self.field.setCurrentText(data)
 
 class License(QTextBrowser):
     def __init__(self, parent):
@@ -1401,7 +1427,18 @@ class DraggableGroupBox(QGroupBox):
     def deleteWidget(self, widget):
         sip.delete(widget)
 
+class UnscrollableQComboBox(QComboBox):
+    def __init__(self, scrollWidget=None, *args, **kwargs):
+        super(UnscrollableQComboBox, self).__init__(*args, **kwargs)  
+        self.scrollWidget = scrollWidget
+        self.setFocusPolicy(Qt.StrongFocus)
 
+    def wheelEvent(self, *args, **kwargs):
+        if self.hasFocus():
+            return QComboBox.wheelEvent(self, *args, **kwargs)
+        else:
+            return self.scrollWidget.wheelEvent(*args, **kwargs)
+        
 
 def start_app():
     app = QApplication(sys.argv)
@@ -1435,6 +1472,8 @@ def start_app():
     win = Window()
     win.show()
     app.exec_()
+
+
     #APP CLOSED
     import cleanup
     cleanup.remove_temp_dir()
