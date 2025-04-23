@@ -1,0 +1,48 @@
+{
+    "title": "Manipulador de Dados de Scouting",
+    "version_short": "v",
+
+    "button_confirm": "Confirmar",
+    "button_cancel": "Cancelar",
+
+    "label_database": "Banco de Dados",
+    "file_dropdown": "Arquivo",
+    "exit": "Sair",
+    "edit_dropdown": "Editar",
+    "save_current_SQL": "Salvar a Aba Atual pra SQL",
+    "save_current_SQL_as": "Salvar a Aba Atual pra SQL como...",
+    "save_current_csv_as": "Salvar a Aba Atual pra .csv como...",
+    "concat_menu": "Combinar",
+    "modify_menu": "Formato",
+    "data_menu": "Ver Dados",
+    "settings_menu": "Definições",
+    "database_dropdown": "Banco de Dados",
+    "view": "Ver",
+    "export_data": "Exportar Dados",
+    "import_data": "Importar Dados",
+    "query": "Pesquisar",
+    "SQL_query": "SQL Queries",
+    "TBA_query": "TBA",
+    "help_menu": "Ayuda",
+    "about_menu": "Sobre",
+    "license_menu": "Licença",
+
+    "merge_tabs_default_name": "Abas Mescladas",
+    "format_selector": "Formato:",
+
+    "host": "Hospedeiro",
+    "user": "Usuário",
+    "password": "Senha",
+    "database_name": "Nome do Banco de Dados",
+    "table_name": "Nome da Tabela",
+    "current_comp_key": "Código da Competição Atual",
+    "TBA_key": "Código da TBA",
+    "language": "Idioma",
+    "restart_needed": "Alguns definições precisam reiniciar o aplicativo.",
+
+    "key_header": "Código",
+    "keys": "Códigos",
+    "datatype_header": "Tipo",
+    "datatypes": "Tipos"
+
+}
