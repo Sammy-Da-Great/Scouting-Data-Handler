@@ -22,9 +22,11 @@ if not os.path.isdir("tmp"):
 
 
 config_maker.initialize_configs()
-create_sql_database.create_database()
 
 import create_sql_database
+
+create_sql_database.create_database()
+
 import app_home
 
 if __name__ == "__main__":
