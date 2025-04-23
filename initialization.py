@@ -13,8 +13,6 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 import config_maker
-import create_sql_database
-import app_home
 
 
 # First Script run in the program.
@@ -25,6 +23,9 @@ if not os.path.isdir("tmp"):
 
 config_maker.initialize_configs()
 create_sql_database.create_database()
+
+import create_sql_database
+import app_home
 
 if __name__ == "__main__":
         app_home.start_app()
