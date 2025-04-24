@@ -52,5 +52,7 @@
     "direct": "Direct",
     "open_presets_folder": "Open Presets Folder",
     "save_conversion": "Save Conversion",
-    "load_conversion": "Load Conversion"
+    "load_conversion": "Load Conversion",
+
+    "modify_target": "Converting"
 }

@@ -172,25 +172,6 @@ class Tabs(QWidget):
                 content = ConcatWizard(self)
                 layoutGrid.addWidget(content)
 
-    def modifyTab(self):
-        if self.test(tr("modify_keys")): #Multiple tabs with the name name cannot exist
-            self.delete(tr("modify_keys"))
-        name = self.tab_bar.tabText(self.tab_bar.currentIndex())
-        if name != '':
-            tab_type = self.tablist[name][2]
-
-            if tab_type == "DataTab":
-                data = self.currentTabData(keys=True)
-
-                content = ModifyWizard(self, data[1], data[2], self.getCurrentTab(), name)
-
-                tab = self.add(tr("modify_keys"), tab_type = "ModifyTab")
-                layoutGrid = QGridLayout()
-                tab.setLayout(layoutGrid)
-                tab.setAutoFillBackground(True)
-
-                layoutGrid.addWidget(content)
-
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
             parent = self.tab_bar
@@ -395,7 +376,7 @@ class MenuBar(QWidget):
         #
         editDropdown = self.create_toolbar_dropdown(tr("edit_dropdown"), menuBar)
         merge_tabs = self.create_toolbar_button(tr("concat_menu"), editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
-        modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.tabs.modifyTab())
+        modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.parent.menus.modifyWizard.createMenu())
         data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
         settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
 
@@ -703,7 +684,35 @@ class ImportWizard(QStackedWidget):
         if filepaths != None:
             self.parent.setCurrentWidget(self)
 
-class ModifyWizard(QWidget):
+class ModifyWizard(QStackedWidget):
+    def __init__(self, parent):
+        super(QStackedWidget, self).__init__(parent)
+        self.parent = parent
+        self.currentChanged.connect(lambda: self.menuCompleted())
+        self.tabs = self.parent.tabs
+
+    def menuCompleted(self):
+        if self.count() > 0:
+            self.setCurrentIndex(0)
+        else:
+            self.parent.setCurrentWidget(self.parent.tabs)
+
+    def createMenu(self):
+        data = self.tabs.currentTabData(keys=True)
+        if (self.count() <= 0) and not (data is None):
+                name = self.tabs.tab_bar.tabText(self.tabs.tab_bar.currentIndex())
+
+                self.addWidget(ModifyMenu(self, data[1], data[2], self.tabs.getCurrentTab(), name))
+
+                self.setCurrentIndex(0)
+                self.parent.setCurrentWidget(self)
+        elif (self.count() > 0):
+            self.setCurrentIndex(0)
+            self.parent.setCurrentWidget(self)
+        else:
+            print("Attempted to modify nothing.")
+
+class ModifyMenu(QWidget):
     def __init__(self, parent, data, db_address, tab, name):
         super(QWidget, self).__init__(parent)
 
@@ -712,6 +721,7 @@ class ModifyWizard(QWidget):
         self.setAutoFillBackground(True)
 
         self.parent = parent
+        self.db_address = db_address
 
         self.data = data
         
@@ -730,16 +740,20 @@ class ModifyWizard(QWidget):
         self.removeItemButton.clicked.connect(lambda: self.removeItem())
 
         self.nameInput = QLineEdit()
+        self.modify_target = QLabel(f'{tr("modify_target")}: {name}')
 
         self.directButton = QPushButton(tr("direct"))
         self.directButton.clicked.connect(lambda: self.directConversion())
+
+        self.cancel_button = QPushButton(tr("button_cancel"))
+        self.cancel_button.clicked.connect(lambda: self.deleteSelf())
 
         self.openPresetsButton = QPushButton(tr("open_presets_folder"))
         self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
         self.confirmButton = QPushButton(tr("button_confirm"))
         self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
 
-        self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.test(self.nameInput.text()))))
+        self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.tabs.test(self.nameInput.text()))))
         self.nameInput.setPlaceholderText(tr("tab_name"))
 
         self.saveConversionButton = QPushButton(tr("save_conversion"))
@@ -749,16 +763,18 @@ class ModifyWizard(QWidget):
         self.loadConversionButton.clicked.connect(lambda: self.loadConversion())
         
 
-        self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 0, 0)
+        self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 2, 0)
         self.layoutGrid.addWidget(self.nameInput, 1, 0)
+        self.layoutGrid.addWidget(self.modify_target, 0, 0)
 
-        self.layoutGrid.addWidget(self.scroll_area, 2, 0)
+        self.layoutGrid.addWidget(self.scroll_area, 3, 0)
 
-        self.layoutGrid.addWidget(self.pairItems([self.directButton, self.openPresetsButton, self.saveConversionButton, self.loadConversionButton, self.confirmButton]), 3, 0)
+        self.layoutGrid.addWidget(self.pairItems([self.directButton, self.openPresetsButton, self.saveConversionButton, self.loadConversionButton]), 4, 0)
+        self.layoutGrid.addWidget(self.pairItems([self.cancel_button, self.confirmButton]), 5, 0)
 
     def saveData(self, name, data):
-        self.parent.createDataTabFromList(name, data, None, (None, None))
-        self.parent.delete(tr("modify_menu"))
+        self.parent.tabs.createDataTabFromList(name, data, None, self.db_address)
+        self.deleteSelf()
 
     def directConversion(self):
         if self.sidebar_layout.count():
@@ -859,6 +875,9 @@ class ModifyWizard(QWidget):
         presets = QWidget()
         presets_layout = QHBoxLayout()
         presets.setLayout()
+
+    def deleteSelf(self):
+        self.deleteLater()
 
 class PresetSelector(QFrame):
     def __init__(self, parent, custom = None, preset = None, keylist = None, key = "", size = 100):
@@ -979,7 +998,7 @@ class PresetConstant(PresetParameterValue):
         pair_layout = QHBoxLayout()
         for item in items:
             pair_layout.addWidget(item)
-        return(pair_layout)  
+        return(pair_layout)
 
 class PresetDropdown(PresetParameterValue):
     def __init__(self, parent, label, value, data):
@@ -1117,54 +1136,6 @@ class ConcatMenu(QWidget):
     def data(self, name):
         return(self.tabs.tabData(name, keys=True)[1])
 
-class ScrollLabel(QScrollArea):
-
-    # constructor
-    def __init__(self, *args, **kwargs):
-        QScrollArea.__init__(self, *args, **kwargs)
-
-        # making widget resizable
-        self.setWidgetResizable(True)
-
-        # making qwidget object
-        content = QWidget(self)
-        self.setWidget(content)
-
-        # vertical box layout
-        lay = QVBoxLayout(content)
-
-        # creating label
-        self.label = QLabel(content)
-
-        # setting alignment to the text
-        self.label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
-        # making label multi-line
-        self.label.setWordWrap(True)
-
-        # adding label to the layout
-        lay.addWidget(self.label)
-
-    # the setText method
-    def setText(self, text):
-        # setting text to the label
-        self.label.setText(text)
-
-class QListDragAndDrop(QListWidget):
-   def __init__(self):
-       super(QListDragAndDrop, self).__init__()
-       self.setFrameShape(QFrame.WinPanel)
-       self.setFrameShadow(QFrame.Raised)
-       self.setDragEnabled(True)
-       self.setDragDropMode(QAbstractItemView.DragDrop)
-       self.setDefaultDropAction(Qt.MoveAction)
-       self.setSelectionMode(QAbstractItemView.MultiSelection)
-       self.setMovement(QListView.Snap)
-       self.setProperty("isWrapping", True)
-       self.setWordWrap(True)
-       self.setSortingEnabled(True)
-       self.setAcceptDrops(True)
-
 class MenuManager(QStackedWidget):
     def __init__(self, parent):
         super(QStackedWidget, self).__init__()
@@ -1175,6 +1146,7 @@ class MenuManager(QStackedWidget):
         self.readme = ReadMe(self)
         self.importwizard = ImportWizard(self)
         self.concatWizard = ConcatWizard(self)
+        self.modifyWizard = ModifyWizard(self)
 
         self.addWidget(self.tabs)
         self.addWidget(self.settings)
@@ -1182,6 +1154,7 @@ class MenuManager(QStackedWidget):
         self.addWidget(self.readme)
         self.addWidget(self.importwizard)
         self.addWidget(self.concatWizard)
+        self.addWidget(self.modifyWizard)
 
         self.setCurrentWidget(self.tabs)
 
@@ -1230,12 +1203,14 @@ class Settings(QWidget):
 
         for key in self.config_items.keys():
             self.layout.addWidget(self.config_items[key])
+
+        self.restart_criteria = {}
         
         self.need_to_restart = QLabel(tr("restart_needed"))
         self.layout.addWidget(self.need_to_restart)
         self.need_to_restart.setVisible(False)
 
-        self.config_items['language'].field.currentIndexChanged.connect(lambda: self.need_to_restart.setVisible(True))
+        self.config_items['language'].field.currentIndexChanged.connect(lambda: self.check_restart_needed('language', 'language'))
 
         self.buttons = QWidget()
         self.buttons_layout = QHBoxLayout()
@@ -1250,12 +1225,18 @@ class Settings(QWidget):
         self.buttons_layout.addWidget(self.confirm_button)
         self.layout.addWidget(self.buttons)
 
+    def check_restart_needed(self, option_key, key_in_config):
+        self.restart_criteria[key_in_config] = (self.config_items[option_key].get_data() != self.global_config[key_in_config])
+        needed = any(self.restart_criteria.values())
+        self.need_to_restart.setVisible(needed)
+
     def confirm(self):
         self.global_config = self.getConfig()
         config_maker.make_config(config_maker.Global_Config(*[self.global_config[key] for key in ['host', 'user', 'password', 'database_name', 'table_name', 'current_competition_key', 'tba_key', 'language']]), "global_config.json")
         database.read_config()
 
-        if self.need_to_restart.isVisible():
+        if any(self.restart_criteria.values()):
+            print("Setting changes require restart. Closing app...")
             self.parent.parent.close()
 
         self.exit()
@@ -1319,6 +1300,7 @@ class SettingDropdownItem(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
         self.return_data = return_data
+        self.option_data = option_data
 
         self.label = QLabel(f'{label_text}:')
         self.layout.addWidget(self.label)
@@ -1332,11 +1314,12 @@ class SettingDropdownItem(QWidget):
 
         self.layout.addWidget(self.field)
 
+
     def get_data(self):
         return(self.return_data[self.field.currentIndex()])
 
     def set_data(self, data):
-        self.field.setCurrentText(data)
+        self.field.setCurrentText(self.option_data[self.return_data.index(data)])
 
 class License(QTextBrowser):
     def __init__(self, parent):
@@ -1440,6 +1423,53 @@ class UnscrollableQComboBox(QComboBox):
         else:
             return self.scrollWidget.wheelEvent(*args, **kwargs)
         
+class QListDragAndDrop(QListWidget):
+   def __init__(self):
+       super(QListDragAndDrop, self).__init__()
+       self.setFrameShape(QFrame.WinPanel)
+       self.setFrameShadow(QFrame.Raised)
+       self.setDragEnabled(True)
+       self.setDragDropMode(QAbstractItemView.DragDrop)
+       self.setDefaultDropAction(Qt.MoveAction)
+       self.setSelectionMode(QAbstractItemView.MultiSelection)
+       self.setMovement(QListView.Snap)
+       self.setProperty("isWrapping", True)
+       self.setWordWrap(True)
+       self.setSortingEnabled(True)
+       self.setAcceptDrops(True)
+
+class ScrollLabel(QScrollArea):
+
+    # constructor
+    def __init__(self, *args, **kwargs):
+        QScrollArea.__init__(self, *args, **kwargs)
+
+        # making widget resizable
+        self.setWidgetResizable(True)
+
+        # making qwidget object
+        content = QWidget(self)
+        self.setWidget(content)
+
+        # vertical box layout
+        lay = QVBoxLayout(content)
+
+        # creating label
+        self.label = QLabel(content)
+
+        # setting alignment to the text
+        self.label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # making label multi-line
+        self.label.setWordWrap(True)
+
+        # adding label to the layout
+        lay.addWidget(self.label)
+
+    # the setText method
+    def setText(self, text):
+        # setting text to the label
+        self.label.setText(text)
 
 def start_app():
     app = QApplication(sys.argv)
