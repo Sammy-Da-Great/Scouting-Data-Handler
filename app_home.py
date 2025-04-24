@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-
-
+if __name__ == "__main__":
+    import initialization
 
 import sys
 import config_maker
@@ -154,23 +154,6 @@ class Tabs(QWidget):
         tab.setAutoFillBackground(True)
         content = DataTab(self, data, filepath, tab)
         layoutGrid.addWidget(content)
-
-    def createConcatTab(self):
-        if self.test("Merge Data"): #Multiple tabs with the name name cannot exist
-            self.delete("Merge Data")
-
-        name = self.tab_bar.tabText(self.tab_bar.currentIndex())
-        if name != '':
-            tab_type = self.tablist[name][2]
-            if tab_type == "DataTab":
-
-                tab = self.add("Merge Data", tab_type = "ConcatTab")
-                layoutGrid = QGridLayout()
-                tab.setLayout(layoutGrid)
-                tab.setAutoFillBackground(True)
-
-                content = ConcatWizard(self)
-                layoutGrid.addWidget(content)
 
     def getCurrentTab(self, parent = None):
         if parent == None: #If parent is not specified, set parent to default tab_bar
@@ -378,7 +361,7 @@ class MenuBar(QWidget):
         merge_tabs = self.create_toolbar_button(tr("concat_menu"), editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
         modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.parent.menus.modifyWizard.createMenu())
         data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
-        settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.settings))
+        settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.parent.menus.settings.display())
 
         editDropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.parent.menus.tabs))
         editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [], self.parent.menus.tabs))
@@ -478,7 +461,7 @@ class DataTab(QWidget):
         for y in range(0, dimensions[0]):
             for x in range(0, dimensions[1]):
                 table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
-    
+
 class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, db_address=(None, None)):
         super().__init__(parent)
@@ -1197,7 +1180,7 @@ class Settings(QWidget):
         self.config_items['password'] = SettingItem(self, tr("password"), set_data= self.global_config['password'], echomode= QLineEdit.Password)
         self.config_items['database_name'] = SettingItem(self, tr("database_name"), set_data= self.global_config['database_name'])
         self.config_items['table_name'] = SettingItem(self, tr("table_name"), set_data= self.global_config['table_name'])
-        self.config_items['current_competition_key'] = SettingItem(self, tr("current_comp_key"), set_data= self.global_config['current_competition_key'])
+        self.config_items['current_competition_key'] = SettingItem(self, tr("current_competition_key"), set_data= self.global_config['current_competition_key'])
         self.config_items['tba_key'] = SettingItem(self, tr("TBA_key"), set_data= self.global_config['tba_key'])
         self.config_items['language'] = SettingDropdownItem(self, tr("language"), self.global_config['language'], ['English', 'Português'], ['en', 'pt'])
 
@@ -1251,6 +1234,11 @@ class Settings(QWidget):
 
     def exit(self):
         self.parent.setCurrentWidget(self.parent.tabs)
+
+    def display(self):
+        for key in self.config_items.keys():
+            self.config_items[key].set_data(self.global_config[key])
+        self.parent.setCurrentWidget(self)
 
     def getConfig(self):
         buffer = {}
@@ -1422,7 +1410,7 @@ class UnscrollableQComboBox(QComboBox):
             return QComboBox.wheelEvent(self, *args, **kwargs)
         else:
             return self.scrollWidget.wheelEvent(*args, **kwargs)
-        
+
 class QListDragAndDrop(QListWidget):
    def __init__(self):
        super(QListDragAndDrop, self).__init__()
@@ -1479,8 +1467,8 @@ def start_app():
     palette.setColor(QtGui.QPalette.Button, QtGui.QColor(50, 50, 50))
     palette.setColor(QtGui.QPalette.Light, QtGui.QColor(75, 75, 75))
     palette.setColor(QtGui.QPalette.Midlight, QtGui.QColor(62, 62, 62))
-    palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(25, 25, 25))
     palette.setColor(QtGui.QPalette.Mid, QtGui.QColor(33, 33, 33))
+    palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(25, 25, 25))
     palette.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))
     palette.setColor(QtGui.QPalette.BrightText, QtGui.QColor(255, 255, 255))
     palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
@@ -1508,6 +1496,6 @@ def start_app():
     #APP CLOSED
     import cleanup
     cleanup.remove_temp_dir()
+
 if __name__ == "__main__":
-    import initialization
     start_app()

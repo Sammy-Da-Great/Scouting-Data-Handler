@@ -7,20 +7,14 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
 import os
-
-abspath = os.path.abspath(__file__) # If the file is run from another directory, it'll set the working directory to its own.
+abspath = os.path.abspath(__file__) # If the file is run from another directory, it will set the working directory to its own.
 dname = os.path.dirname(abspath)
 os.chdir(dname)
-
-import config_maker
-
-
-# First Script run in the program.
-
 if not os.path.isdir("tmp"):
         os.makedirs("tmp")
 
 
+import config_maker
 config_maker.initialize_configs()
 
 import create_sql_database

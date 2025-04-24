@@ -33,8 +33,9 @@ def initialize_configs():
     if not os.path.isdir("config"):
         os.makedirs("config")
 
+
     if not(Path("config/global_config.json").is_file()):
-        make_config(Global_Config("localHost", "defaultUser", "defaultPassword", "defaultDatabaseName", "defaultTableName", "None", "TBA_Key", "en"), "global_config.json")
+        make_config(Global_Config("localHost", "", "", "", "", "", "", "en"), "global_config.json")
 
 def read_global_config(file_name = "global_config.json"):
     f = open("config/" + file_name,"r")
