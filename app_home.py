@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 import sys
 import config_maker
-from PyQt5.QtCore import Qt, QMimeData, QPoint, QEvent
+from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
 from PyQt5.QtGui import QDrag
@@ -34,7 +34,40 @@ import sip
 
 from language_manager import tr
 
-version = "2025.4.23"
+#####
+palette = QtGui.QPalette()
+palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(255, 255, 255))
+palette.setColor(QtGui.QPalette.Button, QtGui.QColor(50, 50, 50))
+palette.setColor(QtGui.QPalette.Light, QtGui.QColor(75, 75, 75))
+palette.setColor(QtGui.QPalette.Midlight, QtGui.QColor(62, 62, 62))
+palette.setColor(QtGui.QPalette.Mid, QtGui.QColor(33, 33, 33))
+palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(25, 25, 25))
+palette.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))
+palette.setColor(QtGui.QPalette.BrightText, QtGui.QColor(255, 255, 255))
+palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
+palette.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
+palette.setColor(QtGui.QPalette.Window, QtGui.QColor(50, 50, 50))
+palette.setColor(QtGui.QPalette.Shadow, QtGui.QColor(0, 0, 0))
+palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(64, 174, 200))
+palette.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(0, 0, 0))
+palette.setColor(QtGui.QPalette.Link, QtGui.QColor(64, 174, 200))
+palette.setColor(QtGui.QPalette.LinkVisited, QtGui.QColor(64, 174, 200))
+palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 25, 25))
+palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 220))
+palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(0, 0, 0))
+palette.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(255, 255, 255, 127))
+
+disabled_color = QtGui.QColor(255, 80, 80, 150)
+palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, disabled_color)
+palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
+#####
+
+
+
+
+
+
+version = "2025.5.2"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -57,218 +90,77 @@ class Window(QMainWindow):
 
         self.showMaximized()
 
-class Tabs(QWidget):
+class Tabs(QTabWidget):
     def __init__(self, parent):
-        super(QWidget, self).__init__(parent)
-        self.layout = QVBoxLayout(self)
-        self.tab_bar = self._createTabBar()
+        super(QTabWidget, self).__init__(parent)
         self.parent = parent
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(lambda index: self.widget(index).delete_self())
 
-    tablist = dict() # tablist[tab_name] == (tab, index in tab bar, tab type, database info(database, table))
-
-    def _createTabBar(self):
-        # Initialize tab screen
-        tabs = QTabWidget()
-        tabs.resize(300,200)
-
-        self.layout.addWidget(tabs)
-        self.setLayout(self.layout)
-
-        tabs.setTabsClosable(True)
-        #tabs.tabCloseRequested.connect(self.deleteByIndex)
-        tabs.tabCloseRequested.connect(lambda index: self.deleteByIndex(index))
-
-        return(tabs)
-
-    def add(self, name = "Default Tab Name", content = None, dictionary = tablist, parent = None, layout = QGridLayout(), tab_type = None):
-        # Creates or modifies a tab.
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-
-        if self.test(name, dictionary, parent): #if tab name already exists in this location, fetch the tab. Else, create a new tab at location.
-            buffer = dictionary[name][0]
-        else:
-            buffer = QWidget()
-            parent.addTab(buffer, name)
-        buffer.layout = layout #Layout of new tab
-        if content != None:
-            buffer.layout.addWidget(content)
-
-        if not(self.test(name, dictionary, parent)): #if the tab has not been added to dictionary, add it.
-            dictionary[name] = [buffer, parent.indexOf(buffer), tab_type, None]
-
-        buffer.layout.setContentsMargins(0,0,0,0)
-        buffer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        return(buffer)
-
-    def delete(self, name, dictionary = tablist, parent = None):
-        # Deletes a tab from the dictionary and tab bar
-        if parent == None: # If no parent is specified, default to tab_bar
-            parent = self.tab_bar
-
-        if self.test(name, dictionary, parent):
-            tab = dictionary[name][0]
-
-            tab.deleteLater() # Deletes the tab
-            parent.removeTab(parent.indexOf(tab)) # Removes the tab from the tab bar
-
-            del dictionary[name] # Removes the tab from the dictionary
-        else: # If tab doesn't exist, return exception
-            print("Key " + name + "doesn't exist")
-        
-    def deleteByIndex(self, index, dictionary = tablist, parent = None):
-        # Fetches the name of a tab from the index and runs self.delete()
-        tab = self.tab_bar.widget(index)
-        tab_name = self.tab_bar.tabText(index)
-
-        self.delete(tab_name, parent = None)
-
-    def test(self, name, dictionary = tablist, parent = None, data_type = None): # Boolean
-        # Tests if a tab exists in tab_bar
-        if parent == None:
-            parent = self.tab_bar
-
-        if name in dictionary:
-            if data_type != None:
-                return(dictionary[name][2] == data_type)
-            else:
-                return(name in dictionary) # If name is in dictionary, return true. Else, return false.
-        else:
-            return(False)
-
-    def createDataTab(self, name, db_address, filepath, dictionary = tablist): #QWidget[]
-        database_name = db_address[0]
-        table_name = db_address[1]
-        data = database.read_table(db_address)
-        self.createDataTabFromList(name, data, filepath, db_address, dictionary)
-
-    def createDataTabFromList(self, name, data, filepath, db_address, dictionary=tablist): #QWidget[]
-        database_name = db_address[0]
-        table_name = db_address[1]
-        tab = self.add(name, tab_type = "DataTab")
-        dictionary[name][3] = [db_address]
-        layoutGrid = QGridLayout()
-
-        tab.setAutoFillBackground(True)
-        content = DataTab(self, data, filepath, tab)
-        layoutGrid.addWidget(content)
-
-    def getCurrentTab(self, parent = None):
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-        tab = parent.widget(parent.currentIndex())
-        return tab
-
-    def saveCurrentTabAsCSV(self, parent = None):
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-        file = SaveFile.data_save(self, name = parent.tabText(parent.currentIndex()) + ".csv")
+    def saveCurrentTabAsCSV(self):
+        file = SaveFile.data_save(self, name = self.tabText(self.currentIndex()) + ".csv")
         if file != "":
-            database.write_csv(file, self.currentTabData(parent=parent, keys=True)[1])
+            database.write_csv(file, self.current_tab().data())
     
-    def saveCurrentTabSQL(self, parent = None):
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
+    def saveCurrentTabSQL(self, save_as = False):
 
-        index = parent.currentIndex()
-        name = parent.tabText(index)
+        index = self.currentIndex()
+        name = self.tabText(index)
+        tab = self.widget(index)
 
-        if self.test(name, data_type = "DataTab"):
+        data = tab.data()
         
+        db_address = tab.db_address
 
-            tabData = self.currentTabData(parent, keys=False)
-            keys = self.currentTabData(parent, keys=True)[1][0]
-            data = tabData[1]
-            db_address = tabData[2]
 
-            if tabData[2] == (None, None):
-                self.saveCurrentTabAsSQL(parent=parent)
-            else:
-                self.saveTabDataSQL(data, db_address, keys)
+        if db_address is None:
+                db_address = (None, None)
 
-    def saveCurrentTabAsSQL(self, parent = None):
-        tabData = self.currentTabData(parent)
-        
-        if tabData != None:
-            dialog = SaveSQLAsDialog(parent, tabData[2])
+        if not isinstance(db_address, tuple):
+                print(f'Attempted to save data with an incorrect db_address: {str(db_address)}. Defaulting to (None, None)')
+                db_address = (None, None)
+
+        if not all(db_address) or save_as:
+            if db_address == (None, None):
+                db_address = ("", "")
+            dialog = SaveSQLAsDialog(db_address = db_address)
             if dialog.exec() == 1:
-                keys = self.currentTabData(parent, keys=True)[1][0]
-                data = tabData[1]
                 db_address = (dialog.databaseInput.text(), dialog.tableInput.text())
-
-                self.saveTabDataSQL(data, db_address, keys)
-
-    def saveTabDataSQL(self, data, db_address, keys):
-        if (db_address != (None, None)) and (data != None) and (keys != None):
-            database.write_to_database(data, db_address, keys)
-
-            self.parent.parent.menubar.updateMenuBar()
-
-    def currentTabData(self, parent = None, keys = False, dictionary=tablist): #[filepath, data, db_address, columns]
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-        index = parent.currentIndex()
-        name = parent.tabText(index)
-        if self.test(name, data_type = "DataTab"):
-            return(self.tabData(name, parent, keys, dictionary))
-        else:
-            return(None)
-
-    def currentTabType(self, parent = None, dictionary = tablist, data_type=None):
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-        index = parent.currentIndex()
-        name = parent.tabText(index)
-        if self.test(name):
-            if data_type != None:
-                return(self.test(name, data_type = data_type))
             else:
-                return(dictionary[name][2])
+                db_address = (None, None)
+                 
+        database.write_to_database(data[1:], db_address, data[0])
+
+    def current_tab(self):
+        return self.currentWidget()
+
+    def add(self, data, name, origin = None, force_name = False):
+        if not(force_name):
+            names = [self.tabText(index) for index in range(self.count())]
+            if name in names:
+                i = 1
+                
+                while f'{name} ({i})' in names:
+                    i = i + 1
+                name = f'{name} ({i})'
+        
+        self.addTab(DataTab(self, data, origin = origin), name)
+
+    def test(self, name):
+        if self.count() >= 0:
+            return name in [self.tabText(i) for i in range(self.count())]
         else:
-            return(False)
+            return False
+    
+    def tab_list(self):
+        return [self.widget(i) for i in range(self.count())]
+    
+    def tab_by_name(self, name): #Not recommended for use
+        tabs = dict(zip([tab.name() for tab in self.tab_list()], self.tab_list()))
+        return(tabs[name])
 
-    def tabData(self, name, parent = None, keys = False, dictionary=tablist):
-        if parent == None: #If parent is not specified, set parent to default tab_bar
-            parent = self.tab_bar
-        tab_type = self.tablist[name][2]
-        tab = self.tablist[name][0]
 
-        if (tab_type == "DataTab"):
-            table = tab.findChildren(QTableWidget)[0]
-            data = []
-            columns = []
-
-            for column in range(table.columnCount()):
-                columns.append(table.horizontalHeaderItem(column).text())
-
-            for row in range(table.rowCount()):
-                row_data = []
-                for column in range(table.columnCount()):
-                    item = table.item(row, column)
-                    if item is not None:
-                        row_data.append(str(item.text()))
-                    else:
-                        row_data.append('')
-                data.append(row_data)
-
-            if keys:
-                key_list = []
-                for c in range(table.columnCount()):
-                    header_item = table.horizontalHeaderItem(c).text()
-                    if header_item == None:
-                        header_item = str(c+1)
-                    
-                    key_list.append(header_item)
-                #print(data)
-                #print(key_list)
-                data.insert(0, key_list)
-            
-            filepath = tab.findChildren(QLabel)[0].text()
-            return((filepath, data, dictionary[name][3][0], columns))
-        else:
-            print(f"Tab {name} is not a data tab, it is a {tab_type}")
 
 class MenuBar(QWidget):
     def __init__(self, parent):
@@ -290,10 +182,7 @@ class MenuBar(QWidget):
             if file != "":
                 database.download_csv_from_database(file, db_address)
         elif action == tr("view"):
-            filepath = database.get_csv_from_database(category + file_name + ".csv", db_address)
-            self.tabs.createDataTab(file_name, db_address, filepath)
-        
-        #print(category + file_name + ".csv")
+            self.tabs.add(db_address, file_name)
 
     def create_toolbar_dropdown(self, name, parent):
         buffer = QMenu(name, self)
@@ -350,11 +239,9 @@ class MenuBar(QWidget):
         file_dropdown = self.create_toolbar_dropdown(tr("file_dropdown"), menuBar)
 
         self.saveActionSQL = self.create_toolbar_button(tr("save_current_SQL"), file_dropdown, lambda: self.tabs.saveCurrentTabSQL())
-        self.saveActionSQLAs = self.create_toolbar_button(tr("save_current_SQL_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsSQL())
+        self.saveActionSQLAs = self.create_toolbar_button(tr("save_current_SQL_as"), file_dropdown, lambda: self.tabs.saveCurrentTabSQL(save_as = True))
         self.saveActionCSV = self.create_toolbar_button(tr("save_current_csv_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button(tr("exit"), file_dropdown, self.parent.close)
-
-        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.tabs.currentTabType(data_type = "DataTab")))
         
         #
         editDropdown = self.create_toolbar_dropdown(tr("edit_dropdown"), menuBar)
@@ -435,32 +322,181 @@ class SaveFile(QWidget):
     def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
         return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
 
-class DataTab(QWidget):
-    def __init__(self, parent, data, filepath, tab):
-        super(QWidget, self).__init__(parent)
-        label = QLabel(filepath)
+class DataTab(QStackedWidget):
+    def __init__(self, parent, data, origin = None):
+        super(QStackedWidget, self).__init__(parent)
+        self.parent = parent
 
-        dimensions = (len(data) - 1, len(data[0]))
+        self.data_menu = self.DataMenu(self)
+        self.progress_menu = self.ProgressMenu(self)
 
-        table = QTableWidget(*dimensions, tab)
-        table.setHorizontalHeaderLabels(data[0])
-        data.pop(0)
+        self.db_address = None
 
-        header_v_text = [str(row[0]) for row in data]
-        header_v_text[0] = tr("datatypes")
-        table.setVerticalHeaderLabels(header_v_text)
+        self.progress_menu.data_loader.on_finished.connect(self.finish)
+        self.progress_menu.data_loader.errorOccurred.connect(self.on_errorOccurred)
+        self.progress_menu.data_loader.setValue.connect(lambda y, x, item: self.data_menu.setItem(y, x, QTableWidgetItem(item)))
 
-        layoutGrid = QGridLayout()
-        tab.setLayout(layoutGrid)
-        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.addWidget(self.data_menu)
+        self.addWidget(self.progress_menu)
 
-        layoutGrid.addWidget(label)
-        layoutGrid.addWidget(table)
-        tab.setAutoFillBackground(True)
 
-        for y in range(0, dimensions[0]):
-            for x in range(0, dimensions[1]):
-                table.setItem(y,x,QTableWidgetItem(str(data[y][x])))
+        self.set_data(data, origin = origin)
+    
+    def index(self):
+        return self.parent.indexOf(self)
+    
+    def name(self):
+        return self.parent.tabText(self.index())
+
+    def delete_self(self):
+        self.progress_menu.thread.quit()
+        self.deleteLater()
+
+    def set_data(self, data, origin = None):
+        if isinstance(data, list): #if data list
+            if isinstance(origin, str):
+                self.data_menu.origin_label.setText(str(origin))
+            elif origin == (None, None) or origin is None:
+                origin = ""
+                self.db_address = (None, None)
+                self.data_menu.origin_label.setText("")
+            elif isinstance(origin, tuple):
+                self.data_menu.origin_label.setText(f'{origin[0]}.{origin[1]}')
+                self.db_address = origin
+            self.progress_menu.load_data(data)
+
+        elif isinstance(data, tuple): #if from database
+            self.db_address = data
+            if origin is None:
+                self.data_menu.origin_label.setText(f'{data[0]}.{data[1]}')
+            elif isinstance(origin, tuple):
+                self.data_menu.origin_label.setText(f'{origin[0]}.{origin[1]}')
+            data = database.read_table(data)
+        
+            self.progress_menu.load_data(data)
+
+        else:
+            print(f"set_data cannot accept type {type(data)}")
+            self.deleteLater()
+
+    def data(self):
+        return self.data_menu.data()
+
+    @pyqtSlot(str)
+    def on_errorOccurred(self, msg):
+        self.progress_menu.thread.quit()
+        self.progress_menu.error_label.setText(msg)
+        QMessageBox.critical(self, "Error Occurred", msg)
+
+    @pyqtSlot()
+    def finish(self):
+        self.setCurrentWidget(self.data_menu)
+        self.progress_menu.thread.quit()
+
+    class DataMenu(QWidget):
+        def __init__(self, parent):
+            super(QWidget, self).__init__(parent)
+            self.parent = parent
+            self.origin_label = QLabel("")
+            self.table = QTableWidget()
+            self.layout = QVBoxLayout()
+
+            self.layout.addWidget(self.origin_label)
+            self.layout.addWidget(self.table)
+
+            self.setLayout(self.layout)
+        
+        def data(self):
+            data = []
+            data.append([self.table.horizontalHeaderItem(column).text() for column in range(self.table.columnCount())])
+            
+            for row in range(self.table.rowCount()):
+                row_buffer = []
+                for column in range(self.table.columnCount()):
+                    item = self.table.item(row, column)
+                    row_buffer.append(item.text())
+                data.append(row_buffer)
+            return data
+
+        @pyqtSlot(int, int, str)
+        def setItem(self, y, x, item):
+            if y == -1:
+                self.table.setHorizontalHeaderItem(x, item)
+            else:
+                self.table.setItem(y, x, item)
+    
+    class ProgressMenu(QWidget):
+
+        start_loading = pyqtSignal(list)
+
+        def __init__(self, parent):
+            super(QWidget, self).__init__(parent)
+            self.parent = parent
+            self.progress = QProgressBar()
+            self.error_label = QLabel("")
+            self.layout = QVBoxLayout()
+
+            self.layout.addWidget(self.progress)
+            self.layout.addWidget(self.error_label)
+
+            self.setLayout(self.layout)
+
+            self.thread = QThread(self)
+            self.data_loader = self.DataLoader()
+            self.data_loader.progressChanged.connect(self.progress.setValue)
+
+        def init_sequence(self):
+            self.progress.setValue(0)
+            self.progress.setMaximum(0)
+            self.error_label.setText("")
+            self.error_label.setEnabled(False)
+            self.parent.setCurrentWidget(self)
+
+        def load_data(self, data):
+            self.init_sequence()
+
+            if isinstance(data, list): #if datalist
+                data = data
+
+            elif isinstance(data, tuple): #if db_address
+                data = database.read_table(data)
+            else:
+                print(f"set_data cannot accept type {type(data)}")
+                data = None
+
+            if not data is None:
+                self.progress.setMaximum(len(data) * len(data[0]))
+                self.parent.data_menu.table.setRowCount(len(data) - 1)
+                self.parent.data_menu.table.setColumnCount(len(data[0]))
+
+                self.thread.start()
+                self.data_loader.moveToThread(self.thread)
+
+
+                self.start_loading.connect(self.data_loader.fillTable)
+                self.start_loading.emit(data)
+
+        class DataLoader(QObject):
+            progressChanged = pyqtSignal(int)
+            setValue = pyqtSignal(int, int, str)
+            started = pyqtSignal()
+            on_finished = pyqtSignal()
+            errorOccurred = pyqtSignal(str)
+
+            @pyqtSlot(list)
+            def fillTable(self, data):
+                row_total = len(data)
+                column_total = len(data[0])
+                for row in range(0, row_total):
+                    for column in range(0, column_total):
+                        try:
+                            item = str(data[row][column])
+                            self.setValue.emit(row - 1, column, item)
+                            self.progressChanged.emit((row * column_total) + column + 1)
+                        except Exception as e:
+                            print(f'item {column}, {row - 1}: {str(e)}')
+                            self.errorOccurred.emit(str(e))
+                self.on_finished.emit()
 
 class SaveSQLAsDialog(QDialog):
     def __init__(self, parent=None, db_address=(None, None)):
@@ -469,15 +505,15 @@ class SaveSQLAsDialog(QDialog):
         if currentDatabase == None:
             currentDatabase = config_maker.read_global_config().database_name
         currentTable = db_address[1]
-        self.setWindowTitle("Save Current Tab as...")
+        self.setWindowTitle(tr("save_current_SQL_as"))
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-        self.databaseLabel = QLabel("Database")
+        self.databaseLabel = QLabel(tr("database_name"))
         self.layout.addWidget(self.databaseLabel)
         self.databaseInput = QLineEdit()
         self.databaseInput.setText(currentDatabase)
         self.layout.addWidget(self.databaseInput)
-        self.tableLabel = QLabel("Table")
+        self.tableLabel = QLabel(tr("table_name"))
         self.layout.addWidget(self.tableLabel)
         self.tableInput = QLineEdit()
         self.tableInput.setText(currentTable)
@@ -514,7 +550,7 @@ class ImportMenu(QWidget):
             #table
             self.table = QTableWidget(4, key_number)
             self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            self.table.setVerticalHeaderLabels([tr("key_header"), tr("datatype_header"), "Datapoint 1", "Datapoint 2"])
+            self.table.setVerticalHeaderLabels([tr("key_header"), tr("datatype_header"), "1", "2"])
             self.layoutGrid.addWidget(self.table, 1, 1)
 
             #Checkboxes
@@ -610,7 +646,7 @@ class ImportMenu(QWidget):
 
         data_confirmed = [keys, types, *data_buffer]
 
-        self.parent.parent.tabs.createDataTabFromList(self.tab_name.text(), data_confirmed, self.filepath, (None, None))
+        self.parent.parent.tabs.add(data_confirmed, self.tab_name.text(), origin = self.filepath)
         self.deleteSelf()
 
     def deleteSelf(self):
@@ -681,11 +717,11 @@ class ModifyWizard(QStackedWidget):
             self.parent.setCurrentWidget(self.parent.tabs)
 
     def createMenu(self):
-        data = self.tabs.currentTabData(keys=True)
+        tab = self.tabs.current_tab()
+        data = tab.data()
         if (self.count() <= 0) and not (data is None):
-                name = self.tabs.tab_bar.tabText(self.tabs.tab_bar.currentIndex())
 
-                self.addWidget(ModifyMenu(self, data[1], data[2], self.tabs.getCurrentTab(), name))
+                self.addWidget(self.ModifyMenu(self, tab))
 
                 self.setCurrentIndex(0)
                 self.parent.setCurrentWidget(self)
@@ -695,172 +731,174 @@ class ModifyWizard(QStackedWidget):
         else:
             print("Attempted to modify nothing.")
 
-class ModifyMenu(QWidget):
-    def __init__(self, parent, data, db_address, tab, name):
-        super(QWidget, self).__init__(parent)
+    class ModifyMenu(QWidget):
+        def __init__(self, parent, tab):
+            super(QWidget, self).__init__(parent)
 
-        self.layoutGrid = QGridLayout(self)
-        self.setLayout(self.layoutGrid)
-        self.setAutoFillBackground(True)
+            self.layoutGrid = QGridLayout(self)
+            self.setLayout(self.layoutGrid)
+            self.setAutoFillBackground(True)
 
-        self.parent = parent
-        self.db_address = db_address
+            self.tab = tab
 
-        self.data = data
-        
-        self.heightVar = 200
-        
+            self.parent = parent
+            self.db_address = self.tab.db_address
 
-        self.scroll_area = QScrollArea()
-        self.sidebar = DraggableGroupBox(self, self.heightVar)
-        self.scroll_area.setWidgetResizable(True)
-        self.sidebar_layout = self.sidebar.layout
-        self.scroll_area.setWidget(self.sidebar)
-        
-        self.addItemButton = QPushButton("+")
-        self.removeItemButton = QPushButton("-")
-        self.addItemButton.clicked.connect(lambda: self.addItem())
-        self.removeItemButton.clicked.connect(lambda: self.removeItem())
-
-        self.nameInput = QLineEdit()
-        self.modify_target = QLabel(f'{tr("modify_target")}: {name}')
-
-        self.directButton = QPushButton(tr("direct"))
-        self.directButton.clicked.connect(lambda: self.directConversion())
-
-        self.cancel_button = QPushButton(tr("button_cancel"))
-        self.cancel_button.clicked.connect(lambda: self.deleteSelf())
-
-        self.openPresetsButton = QPushButton(tr("open_presets_folder"))
-        self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
-        self.confirmButton = QPushButton(tr("button_confirm"))
-        self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
-
-        self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.tabs.test(self.nameInput.text()))))
-        self.nameInput.setPlaceholderText(tr("tab_name"))
-
-        self.saveConversionButton = QPushButton(tr("save_conversion"))
-        self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
-
-        self.loadConversionButton = QPushButton(tr("load_conversion"))
-        self.loadConversionButton.clicked.connect(lambda: self.loadConversion())
-        
-
-        self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 2, 0)
-        self.layoutGrid.addWidget(self.nameInput, 1, 0)
-        self.layoutGrid.addWidget(self.modify_target, 0, 0)
-
-        self.layoutGrid.addWidget(self.scroll_area, 3, 0)
-
-        self.layoutGrid.addWidget(self.pairItems([self.directButton, self.openPresetsButton, self.saveConversionButton, self.loadConversionButton]), 4, 0)
-        self.layoutGrid.addWidget(self.pairItems([self.cancel_button, self.confirmButton]), 5, 0)
-
-    def saveData(self, name, data):
-        self.parent.tabs.createDataTabFromList(name, data, None, self.db_address)
-        self.deleteSelf()
-
-    def directConversion(self):
-        if self.sidebar_layout.count():
-            widgets = list(self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-            for widget in widgets:
-                widget.delete()
-
-        for item in zip(self.data[0], self.data[1]):
+            self.data = self.tab.data()
             
-            preset = "direct.py"
-            self.addItem(key = item[0], custom = "Default", preset = preset, keylist = [item[0]])
+            self.heightVar = 200
+            
+
+            self.scroll_area = QScrollArea()
+            self.sidebar = DraggableGroupBox(self, self.heightVar)
+            self.scroll_area.setWidgetResizable(True)
+            self.sidebar_layout = self.sidebar.layout
+            self.scroll_area.setWidget(self.sidebar)
+            
+            self.addItemButton = QPushButton("+")
+            self.removeItemButton = QPushButton("-")
+            self.addItemButton.clicked.connect(lambda: self.addItem())
+            self.removeItemButton.clicked.connect(lambda: self.removeItem())
+
+            self.nameInput = QLineEdit()
+            self.modify_target = QLabel(f'{tr("modify_target")}: {self.tab.name()}')
+
+            self.directButton = QPushButton(tr("direct"))
+            self.directButton.clicked.connect(lambda: self.directConversion())
+
+            self.cancel_button = QPushButton(tr("button_cancel"))
+            self.cancel_button.clicked.connect(lambda: self.deleteSelf())
+
+            self.openPresetsButton = QPushButton(tr("open_presets_folder"))
+            self.openPresetsButton.clicked.connect(lambda: mph.openFolder())
+            self.confirmButton = QPushButton(tr("button_confirm"))
+            self.confirmButton.clicked.connect(lambda: self.saveData(self.nameInput.text(), mph.runConversion(self.getConversion(), self.data, self.getConstants())))
+
+            self.nameInput.textChanged.connect(lambda: self.confirmButton.setEnabled(not(self.parent.tabs.test(self.nameInput.text()))))
+            self.nameInput.setPlaceholderText(tr("tab_name"))
+
+            self.saveConversionButton = QPushButton(tr("save_conversion"))
+            self.saveConversionButton.clicked.connect(lambda: self.saveConversion())
+
+            self.loadConversionButton = QPushButton(tr("load_conversion"))
+            self.loadConversionButton.clicked.connect(lambda: self.loadConversion())
+            
+
+            self.layoutGrid.addWidget(self.pairItems([self.addItemButton, self.removeItemButton]), 2, 0)
+            self.layoutGrid.addWidget(self.nameInput, 1, 0)
+            self.layoutGrid.addWidget(self.modify_target, 0, 0)
+
+            self.layoutGrid.addWidget(self.scroll_area, 3, 0)
+
+            self.layoutGrid.addWidget(self.pairItems([self.directButton, self.openPresetsButton, self.saveConversionButton, self.loadConversionButton]), 4, 0)
+            self.layoutGrid.addWidget(self.pairItems([self.cancel_button, self.confirmButton]), 5, 0)
+
+        def saveData(self, name, data):
+            self.parent.tabs.add(data, name, origin = self.db_address)
+            self.deleteSelf()
+
+        def directConversion(self):
+            if self.sidebar_layout.count():
+                widgets = list(self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+                for widget in widgets:
+                    widget.delete()
+
+            for item in zip(self.data[0], self.data[1]):
+                
+                preset = "direct.py"
+                self.addItem(key = item[0], custom = "Default", preset = preset, keylist = [item[0]])
 
 
-    def loadConversion(self):
-        name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
-        if name != "":
-            data = mph.readConversion(name)
-            #Delete Current Conversion
+        def loadConversion(self):
+            name = SaveFile.file_dialog(self, "ModifyData\\ConversionPresets\\")
+            if name != "":
+                data = mph.readConversion(name)
+                #Delete Current Conversion
+                widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+                for widget in widgets:
+                    self.deleteWidget(widget)
+
+                #Load Conversion
+                for row in data['rows']:
+                    self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
+                print(data['rows'])
+
+        def saveConversion(self):
+            name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
+            if name != "":
+                presets = self.getConversion()
+                mph.saveConversion(presets, name)
+
+        def getConversion(self, constants = False):
+            key_list = self.data[0]
+            presets = [key_list]
             widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
             for widget in widgets:
-                self.deleteWidget(widget)
+                key = widget.key()
+                values = widget.getValues()
+                preset_group = values[0]
+                preset_name = values[1]
+                keys = values[2]
+                if constants:
+                    presets.append([key, preset_group, preset_name, *keys])
+                else:
+                    presets.append([key, preset_group, preset_name, *keys])
+            return(presets)
 
-            #Load Conversion
-            for row in data['rows']:
-                self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
-            print(data['rows'])
+        def getConstants(self):
+            key_list = self.data[0]
+            presets = [key_list]
+            widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
+            for widget in widgets:
+                constants = widget.getConstants()
+                presets.append(constants)
+            return(presets)
 
-    def saveConversion(self):
-        name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
-        if name != "":
-            presets = self.getConversion()
-            mph.saveConversion(presets, name)
 
-    def getConversion(self, constants = False):
-        key_list = self.data[0]
-        presets = [key_list]
-        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-        for widget in widgets:
-            key = widget.key()
-            values = widget.getValues()
-            preset_group = values[0]
-            preset_name = values[1]
-            keys = values[2]
-            if constants:
-                presets.append([key, preset_group, preset_name, *keys])
+        def addItem(self, key = "", custom = None, preset = None, keylist = None, size = None):
+            if size == None:
+                size = self.heightVar
+            buffer = PresetSelector(self, custom = custom, preset = preset, keylist = keylist, key = key, size = size)
+            self.sidebar_layout.addWidget(buffer)
+        
+        def removeItem(self):
+            if type(self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1)) != type(None):
+                self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget().delete()
+
+        def pairItems(self, items, frame = False, size = None):
+            if frame:
+                pair = QFrame()
+                pair.setFrameStyle(QFrame.Panel | QFrame.Raised)
+                pair.setLineWidth(2)
             else:
-                presets.append([key, preset_group, preset_name, *keys])
-        return(presets)
+                pair = QWidget()
+            pair_layout = QHBoxLayout(pair)
+            for item in items:
+                pair_layout.addWidget(item)
 
-    def getConstants(self):
-        key_list = self.data[0]
-        presets = [key_list]
-        widgets = (self.sidebar_layout.itemAt(i).widget() for i in range(self.sidebar_layout.count())) 
-        for widget in widgets:
-            constants = widget.getConstants()
-            presets.append(constants)
-        return(presets)
+            if size != None:
+                pair.setFixedHeight(size)
+            return(pair)
 
+        def fetchPresets(self, custom = False):
+            if custom:
+                filenames = next(os.walk("ModifyData/ModifyPresets/"), (None, None, []))[2]
+            else:
+                filenames = next(os.walk("ModifyData/DefaultModifyPresets/"), (None, None, []))[2]
+            return filenames
 
-    def addItem(self, key = "", custom = None, preset = None, keylist = None, size = None):
-        if size == None:
-            size = self.heightVar
-        buffer = PresetSelector(self, custom = custom, preset = preset, keylist = keylist, key = key, size = size)
-        self.sidebar_layout.addWidget(buffer)
-    
-    def removeItem(self):
-        if type(self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1)) != type(None):
-            self.sidebar_layout.itemAt(self.sidebar_layout.count() - 1).widget().delete()
+        def dropdownMenu(self, data):
+            dropdown = UnscrollableQComboBox(self.sidebar)
+            dropdown.addItems(data)
+            return(dropdown)
 
-    def pairItems(self, items, frame = False, size = None):
-        if frame:
-            pair = QFrame()
-            pair.setFrameStyle(QFrame.Panel | QFrame.Raised)
-            pair.setLineWidth(2)
-        else:
-            pair = QWidget()
-        pair_layout = QHBoxLayout(pair)
-        for item in items:
-            pair_layout.addWidget(item)
+        def preset(self, keys):
+            presets = QWidget()
+            presets_layout = QHBoxLayout()
+            presets.setLayout()
 
-        if size != None:
-            pair.setFixedHeight(size)
-        return(pair)
-
-    def fetchPresets(self, custom = False):
-        if custom:
-            filenames = next(os.walk("ModifyData/ModifyPresets/"), (None, None, []))[2]
-        else:
-            filenames = next(os.walk("ModifyData/DefaultModifyPresets/"), (None, None, []))[2]
-        return filenames
-
-    def dropdownMenu(self, data):
-        dropdown = UnscrollableQComboBox(self.sidebar)
-        dropdown.addItems(data)
-        return(dropdown)
-
-    def preset(self, keys):
-        presets = QWidget()
-        presets_layout = QHBoxLayout()
-        presets.setLayout()
-
-    def deleteSelf(self):
-        self.deleteLater()
+        def deleteSelf(self):
+            self.deleteLater()
 
 class PresetSelector(QFrame):
     def __init__(self, parent, custom = None, preset = None, keylist = None, key = "", size = 100):
@@ -948,9 +986,9 @@ class PresetSelector(QFrame):
 
             for key, constant, value in zip(keys_list, constant_list, values):
                 if constant:
-                    self.keys_layout.addWidget(PresetConstant(self, key, value))
+                    self.keys_layout.addWidget(self.PresetConstant(self, key, value))
                 else:
-                    self.keys_layout.addWidget(PresetDropdown(self, key, value, self.parent.data[0]))
+                    self.keys_layout.addWidget(self.PresetDropdown(self, key, value, self.parent.data[0]))
 
     def getValues(self):
         return([self.custom_dropdown.currentText(), self.selector_dropdown.currentText(), self.getKeys()])
@@ -958,54 +996,54 @@ class PresetSelector(QFrame):
     def delete(self):
         sip.delete(self)
 
-class PresetParameterValue(QWidget):
-    def getValue(self):
-        return(None)
+    class PresetParameterValue(QWidget):
+        def getValue(self):
+            return(None)
 
-class PresetConstant(PresetParameterValue):
-    def __init__(self, parent, label, value):
-        super(QWidget, self).__init__()
+    class PresetConstant(PresetParameterValue):
+        def __init__(self, parent, label, value):
+            super(QWidget, self).__init__()
 
-        self.constant = True
+            self.constant = True
 
-        self.constant_field = QLineEdit()
-        if value != None:
-            self.constant_field.setText(value)
+            self.constant_field = QLineEdit()
+            if value != None:
+                self.constant_field.setText(value)
 
-        self.setLayout(self.pairItems([QLabel(f"{label}:"), self.constant_field]))
+            self.setLayout(self.pairItems([QLabel(f"{label}:"), self.constant_field]))
 
-    def getValue(self):
-        return(self.constant_field.text())
+        def getValue(self):
+            return(self.constant_field.text())
 
-    def pairItems(self, items):
-        pair_layout = QHBoxLayout()
-        for item in items:
-            pair_layout.addWidget(item)
-        return(pair_layout)
+        def pairItems(self, items):
+            pair_layout = QHBoxLayout()
+            for item in items:
+                pair_layout.addWidget(item)
+            return(pair_layout)
 
-class PresetDropdown(PresetParameterValue):
-    def __init__(self, parent, label, value, data):
-        super(QWidget, self).__init__()
+    class PresetDropdown(PresetParameterValue):
+        def __init__(self, parent, label, value, data):
+            super(QWidget, self).__init__()
 
-        self.constant = False
-        self.parent = parent
+            self.constant = False
+            self.parent = parent
 
-        self.dropdown = UnscrollableQComboBox(scrollWidget = self.parent.parent.sidebar)
-        self.dropdown.addItems(data)
+            self.dropdown = UnscrollableQComboBox(scrollWidget = self.parent.parent.sidebar)
+            self.dropdown.addItems(data)
 
-        if value != None:
-            self.dropdown.setCurrentText(value)
+            if value != None:
+                self.dropdown.setCurrentText(value)
 
-        self.setLayout(self.pairItems([QLabel(f"{label}:"), self.dropdown]))
+            self.setLayout(self.pairItems([QLabel(f"{label}:"), self.dropdown]))
 
-    def getValue(self):
-        return(self.dropdown.currentText())
+        def getValue(self):
+            return(self.dropdown.currentText())
 
-    def pairItems(self, items):
-        pair_layout = QHBoxLayout()
-        for item in items:
-            pair_layout.addWidget(item)
-        return(pair_layout)
+        def pairItems(self, items):
+            pair_layout = QHBoxLayout()
+            for item in items:
+                pair_layout.addWidget(item)
+            return(pair_layout)
 
 class ConcatWizard(QStackedWidget):
     def __init__(self, parent):
@@ -1021,103 +1059,96 @@ class ConcatWizard(QStackedWidget):
 
     def createMenu(self):
         if self.count() <= 0:
-            self.addWidget(ConcatMenu(self))
+            self.addWidget(self.ConcatMenu(self))
         self.setCurrentIndex(0)
         self.parent.setCurrentWidget(self)
 
-class ConcatMenu(QWidget):
-    def __init__(self, parent):
-        super(QWidget, self).__init__(parent)
+    class ConcatMenu(QWidget):
+        def __init__(self, parent):
+            super(QWidget, self).__init__(parent)
 
-        self.layoutGrid = QGridLayout(self)
-        self.setLayout(self.layoutGrid)
-        self.setAutoFillBackground(True)
+            self.layoutGrid = QGridLayout(self)
+            self.setLayout(self.layoutGrid)
+            self.setAutoFillBackground(True)
 
-        self.parent = parent
-        self.tabs = self.parent.parent.tabs
+            self.parent = parent
+            self.tabs = self.parent.parent.tabs
 
-        #
-        self.sidebar = QVBoxLayout()
-        self.tab_name = QLineEdit(tr("merge_tabs_default_name"))
-        self.format_selector = QWidget()
-        self.format_selector_layout = QHBoxLayout()
-        self.format_selector.setLayout(self.format_selector_layout)
-        self.format_label = QLabel(tr("format_selector"))
+            #
+            self.sidebar = QVBoxLayout()
+            self.tab_name = QLineEdit(tr("merge_tabs_default_name"))
+            self.format_selector = QWidget()
+            self.format_selector_layout = QHBoxLayout()
+            self.format_selector.setLayout(self.format_selector_layout)
+            self.format_label = QLabel(tr("format_selector"))
 
-        self.format = self.dropdownMenu(self.dataTabs())
-        self.sidebar.addWidget(self.tab_name)
-        self.sidebar.addWidget(self.format_selector)
-        self.format_selector_layout.addWidget(self.format_label)
-        self.format_selector_layout.addWidget(self.format)
+            self.format = self.dropdownMenu([tab.name() for tab in self.dataTabs()])
+            self.sidebar.addWidget(self.tab_name)
+            self.sidebar.addWidget(self.format_selector)
+            self.format_selector_layout.addWidget(self.format_label)
+            self.format_selector_layout.addWidget(self.format)
 
-        self.possible_items = QListDragAndDrop()
-        self.possible_items.setFlow(QListView.TopToBottom)
-        self.possible_items.setWrapping(False)
-        self.possible_items.setResizeMode(QListView.Adjust)
-        self.layoutGrid.addWidget(self.possible_items, 1, 1)
+            self.possible_items = QListDragAndDrop()
+            self.possible_items.setFlow(QListView.TopToBottom)
+            self.possible_items.setWrapping(False)
+            self.possible_items.setResizeMode(QListView.Adjust)
+            self.layoutGrid.addWidget(self.possible_items, 1, 1)
 
-        self.chosen_items = QListDragAndDrop()
-        self.chosen_items.setFlow(QListView.TopToBottom)
-        self.chosen_items.setWrapping(False)
-        self.chosen_items.setResizeMode(QListView.Adjust)
-        self.layoutGrid.addWidget(self.chosen_items, 1, 2)
+            self.chosen_items = QListDragAndDrop()
+            self.chosen_items.setFlow(QListView.TopToBottom)
+            self.chosen_items.setWrapping(False)
+            self.chosen_items.setResizeMode(QListView.Adjust)
+            self.layoutGrid.addWidget(self.chosen_items, 1, 2)
 
-        self.format.currentTextChanged.connect(lambda: self.updateList())
-        
+            self.format.currentTextChanged.connect(lambda: self.updateList())
+            
 
-        self.confirm_button = QPushButton(tr("button_confirm"))
-        self.confirm_button.clicked.connect(lambda: self.confirm())
-        self.sidebar.addWidget(self.confirm_button)
+            self.confirm_button = QPushButton(tr("button_confirm"))
+            self.confirm_button.clicked.connect(lambda: self.confirm())
+            self.sidebar.addWidget(self.confirm_button)
 
-        self.cancel_button = QPushButton(tr("button_cancel"))
-        self.cancel_button.clicked.connect(lambda: self.deleteSelf())
-        self.sidebar.addWidget(self.cancel_button)
+            self.cancel_button = QPushButton(tr("button_cancel"))
+            self.cancel_button.clicked.connect(lambda: self.deleteSelf())
+            self.sidebar.addWidget(self.cancel_button)
 
-        self.layoutGrid.addLayout(self.sidebar, 1, 0)
+            self.layoutGrid.addLayout(self.sidebar, 1, 0)
 
-        self.tab_name.textChanged.connect(lambda: self.confirm_button.setEnabled(not(self.tabs.test(self.tab_name.text()))))
+            self.tab_name.textChanged.connect(lambda: self.confirm_button.setEnabled(not(self.tabs.test(self.tab_name.text()))))
 
-        self.updateList()
+            self.updateList()
 
-    def confirm(self):
-        formatList = self.tabs.tabData(self.format.currentText(), keys=True)[1][0:2]
+        def confirm(self):
+            formatList = self.tabs.tab_by_name(self.format.currentText()).data()[0:1]
 
-        data = []
+            data = []
 
-        for tab_index in range(self.chosen_items.count()):
-            tab_name = self.chosen_items.item(tab_index).text()
-            tab_data = self.tabs.tabData(tab_name, keys=False)[1][1:]
-            data.extend(tab_data)
+            for tab in [self.tabs.tab_by_name(self.chosen_items.item(tab_index).text()) for tab_index in range(self.chosen_items.count())]:
+                tab_data = tab.data()[2:]
+                data.extend(tab_data)
 
-        data = [*formatList, *data]
+            data = [*formatList, *data]
 
-        self.tabs.createDataTabFromList(self.tab_name.text(), data, "", (None, None))
-        self.deleteSelf()
+            self.tabs.add(data, self.tab_name.text(), origin = None)
+            self.deleteSelf()
 
-    def deleteSelf(self):
-        self.deleteLater()
+        def deleteSelf(self):
+            self.deleteLater()
 
-    def updateList(self):
-        self.possible_items.clear()
-        self.chosen_items.clear()
-        self.possible_items.addItems(self.dataTabs(self.format.currentText()))
+        def updateList(self):
+            self.possible_items.clear()
+            self.chosen_items.clear()
+            self.possible_items.addItems([tab.name() for tab in self.dataTabs(formatTab = self.tabs.tab_by_name(self.format.currentText()))])
 
-    def dropdownMenu(self, data):
-        dropdown = QComboBox()
-        dropdown.addItems(data)
-        return(dropdown)
+        def dropdownMenu(self, data):
+            dropdown = QComboBox()
+            dropdown.addItems(data)
+            return(dropdown)
 
-    def dataTabs(self, formatTab = None):
-        tabs = [*self.tabs.tablist]
-        tabs = list(filter((lambda tabname: self.tabs.tablist[tabname][2] == "DataTab"), tabs))
-        if formatTab != None:
-            tabs = list(map(lambda tabname: (tabname, self.data(tabname)[0]), tabs))
-            tabs = list(filter((lambda tab: tab[1] == self.data(formatTab)[0]), tabs))
-            tabs = [tab[0] for tab in tabs]
-        return(tabs)
-
-    def data(self, name):
-        return(self.tabs.tabData(name, keys=True)[1])
+        def dataTabs(self, formatTab = None):
+            tabs = self.tabs.tab_list()
+            if formatTab != None:
+                tabs = list(filter((lambda tab: tab.data()[0:1] == formatTab.data()[0:1]), tabs)) #filter for only tabs with same keys and data types
+            return(tabs)
 
 class MenuManager(QStackedWidget):
     def __init__(self, parent):
@@ -1175,14 +1206,14 @@ class Settings(QWidget):
         self.global_config = self.getGlobalConfig()
 
         self.config_items = {}
-        self.config_items['host'] = SettingItem(self, tr("host"), set_data= self.global_config['host'])
-        self.config_items['user'] = SettingItem(self, tr("user"), set_data= self.global_config['user'])
-        self.config_items['password'] = SettingItem(self, tr("password"), set_data= self.global_config['password'], echomode= QLineEdit.Password)
-        self.config_items['database_name'] = SettingItem(self, tr("database_name"), set_data= self.global_config['database_name'])
-        self.config_items['table_name'] = SettingItem(self, tr("table_name"), set_data= self.global_config['table_name'])
-        self.config_items['current_competition_key'] = SettingItem(self, tr("current_competition_key"), set_data= self.global_config['current_competition_key'])
-        self.config_items['tba_key'] = SettingItem(self, tr("TBA_key"), set_data= self.global_config['tba_key'])
-        self.config_items['language'] = SettingDropdownItem(self, tr("language"), self.global_config['language'], ['English', 'Português'], ['en', 'pt'])
+        self.config_items['host'] = self.SettingItem(self, tr("host"), set_data= self.global_config['host'])
+        self.config_items['user'] = self.SettingItem(self, tr("user"), set_data= self.global_config['user'])
+        self.config_items['password'] = self.SettingItem(self, tr("password"), set_data= self.global_config['password'], echomode= QLineEdit.Password)
+        self.config_items['database_name'] = self.SettingItem(self, tr("database_name"), set_data= self.global_config['database_name'])
+        self.config_items['table_name'] = self.SettingItem(self, tr("table_name"), set_data= self.global_config['table_name'])
+        self.config_items['current_competition_key'] = self.SettingItem(self, tr("current_competition_key"), set_data= self.global_config['current_competition_key'])
+        self.config_items['tba_key'] = self.SettingItem(self, tr("TBA_key"), set_data= self.global_config['tba_key'])
+        self.config_items['language'] = self.SettingDropdownItem(self, tr("language"), self.global_config['language'], ['English', 'Español', 'Português'], ['en', 'es', 'pt'])
 
         for key in self.config_items.keys():
             self.layout.addWidget(self.config_items[key])
@@ -1262,52 +1293,52 @@ class Settings(QWidget):
 
         return(buffer)
 
-class SettingItem(QWidget):
-    def __init__(self, parent, label_text, set_data="", echomode=QLineEdit.Normal):
-        super(QWidget, self).__init__()
-        self.layout = QHBoxLayout()
-        self.setLayout(self.layout)
-        self.echomode = echomode
+    class SettingItem(QWidget):
+        def __init__(self, parent, label_text, set_data="", echomode=QLineEdit.Normal):
+            super(QWidget, self).__init__()
+            self.layout = QHBoxLayout()
+            self.setLayout(self.layout)
+            self.echomode = echomode
 
-        self.label = QLabel(f'{label_text}:')
-        self.layout.addWidget(self.label)
+            self.label = QLabel(f'{label_text}:')
+            self.layout.addWidget(self.label)
 
-        self.field = QLineEdit(set_data)
-        self.field.setEchoMode(echomode)
-        self.layout.addWidget(self.field)
+            self.field = QLineEdit(set_data)
+            self.field.setEchoMode(echomode)
+            self.layout.addWidget(self.field)
 
-    def get_data(self):
-        return(self.field.text())
+        def get_data(self):
+            return(self.field.text())
 
-    def set_data(self, data):
-        self.field.setText(data)
+        def set_data(self, data):
+            self.field.setText(data)
 
-class SettingDropdownItem(QWidget):
-    def __init__(self, parent, label_text, set_data, option_data, return_data):
-        super(QWidget, self).__init__()
-        self.layout = QHBoxLayout()
-        self.setLayout(self.layout)
-        self.return_data = return_data
-        self.option_data = option_data
+    class SettingDropdownItem(QWidget):
+        def __init__(self, parent, label_text, set_data, option_data, return_data):
+            super(QWidget, self).__init__()
+            self.layout = QHBoxLayout()
+            self.setLayout(self.layout)
+            self.return_data = return_data
+            self.option_data = option_data
 
-        self.label = QLabel(f'{label_text}:')
-        self.layout.addWidget(self.label)
-
-
-        self.field = UnscrollableQComboBox(option_data)
-        for item in option_data:
-            self.field.addItem(item)
-
-        self.set_data(set_data)
-
-        self.layout.addWidget(self.field)
+            self.label = QLabel(f'{label_text}:')
+            self.layout.addWidget(self.label)
 
 
-    def get_data(self):
-        return(self.return_data[self.field.currentIndex()])
+            self.field = UnscrollableQComboBox(option_data)
+            for item in option_data:
+                self.field.addItem(item)
 
-    def set_data(self, data):
-        self.field.setCurrentText(self.option_data[self.return_data.index(data)])
+            self.set_data(set_data)
+
+            self.layout.addWidget(self.field)
+
+
+        def get_data(self):
+            return(self.return_data[self.field.currentIndex()])
+
+        def set_data(self, data):
+            self.field.setCurrentText(self.option_data[self.return_data.index(data)])
 
 class License(QTextBrowser):
     def __init__(self, parent):
@@ -1462,31 +1493,6 @@ class ScrollLabel(QScrollArea):
 def start_app():
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("fusion"))
-    palette = QtGui.QPalette()
-    palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(255, 255, 255))
-    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(50, 50, 50))
-    palette.setColor(QtGui.QPalette.Light, QtGui.QColor(75, 75, 75))
-    palette.setColor(QtGui.QPalette.Midlight, QtGui.QColor(62, 62, 62))
-    palette.setColor(QtGui.QPalette.Mid, QtGui.QColor(33, 33, 33))
-    palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(25, 25, 25))
-    palette.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))
-    palette.setColor(QtGui.QPalette.BrightText, QtGui.QColor(255, 255, 255))
-    palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
-    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(50, 50, 50))
-    palette.setColor(QtGui.QPalette.Shadow, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(64, 174, 200))
-    palette.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.Link, QtGui.QColor(64, 174, 200))
-    palette.setColor(QtGui.QPalette.LinkVisited, QtGui.QColor(64, 174, 200))
-    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 25, 25))
-    palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 220))
-    palette.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(0, 0, 0))
-    palette.setColor(QtGui.QPalette.PlaceholderText, QtGui.QColor(255, 255, 255, 127))
-
-    disabled_color = QtGui.QColor(255, 80, 80, 150)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, disabled_color)
-    palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
     app.setPalette(palette)
     win = Window()
     win.show()

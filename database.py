@@ -87,9 +87,7 @@ def write_to_database(data, db_address, columnHeaders):
                 row = [data_item.lstrip() for data_item in data_row]
                 row_buffer = []
                 for item in row:
-                    print(f'.{item}.')
                     if item == 'None' or item == '':
-                        print("None item")
                         row_buffer.append('NULL')
                     else:
                         row_buffer.append(item)
@@ -105,9 +103,10 @@ def write_to_database(data, db_address, columnHeaders):
                         valueQueryList.append(f'\"{row[i]}\"')
                 columnQuery = separator.join(columnQueryList)
                 valueQuery = separator.join(valueQueryList)
-                print(columnQuery)
-                print(valueQuery)
-                query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
+                try:
+                    query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
+                except Exception as e:
+                    print(e)
         else:
             print(f'{db_address} is not a valid db_address')
     except mysql.connector.errors.ProgrammingError as e:
@@ -167,7 +166,7 @@ def get_dimensions(db_address): # Tuple (entry count (int), key count (int))
 
     return((entry_count, key_count))
 
-def read_table(db_address, header=True, types=True):
+def read_table(db_address, header = True, types = True):
     database = db_address[0]
     table = db_address[1]
 
@@ -176,7 +175,7 @@ def read_table(db_address, header=True, types=True):
         rows.insert(0, datatypes(db_address))
     if header:
         rows.insert(0, columns(db_address))
-    return rows
+    return [[*row] for row in rows]
 
 def read_csv(filepath):
     data = []

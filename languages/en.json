@@ -35,7 +35,7 @@
     "password": "Password",
     "database_name": "Database Name",
     "table_name": "Table Name",
-    "current_comp_key": "Current Comp Key",
+    "current_competition_key": "Current Comp Key",
     "TBA_key": "TBA Key",
     "language": "Language",
     "restart_needed": "Some changes require restarting the app.",
