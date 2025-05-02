@@ -160,8 +160,6 @@ class Tabs(QTabWidget):
         tabs = dict(zip([tab.name() for tab in self.tab_list()], self.tab_list()))
         return(tabs[name])
 
-
-
 class MenuBar(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
@@ -264,8 +262,8 @@ class MenuBar(QWidget):
         view_dropdown = self.create_toolbar_dropdown(tr("view"), database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
 
-        export_dropdown = self.create_toolbar_dropdown(tr("export_data"), database_dropdown)
-        self.database_dropdowns(database_names, export_dropdown)
+        # export_dropdown = self.create_toolbar_dropdown(tr("export_data"), database_dropdown)
+        # self.database_dropdowns(database_names, export_dropdown)
 
         import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.parent.menus.importwizard.importData())
         # Validation
