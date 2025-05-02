@@ -525,155 +525,6 @@ class SaveSQLAsDialog(QDialog):
         self.layout.addWidget(self.dialogButtons)
         self.show()
 
-class ImportMenu(QWidget):
-    def __init__(self, parent, filepath):
-        super(QWidget, self).__init__(parent)
-
-        self.layoutGrid = QGridLayout(self)
-        self.setLayout(self.layoutGrid)
-        self.setAutoFillBackground(True)
-
-        self.parent = parent
-
-        self.filepath = filepath
-        label = QLabel(self.filepath)
-
-        self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
-
-        #####
-        if (self.filepath == '' or not(database.test(self.filepath))):
-            self.deleteSelf()
-        else:
-            self.data = database.read_csv(self.filepath)
-            key_number = len(self.data[0])
-
-            #table
-            self.table = QTableWidget(4, key_number)
-            self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            self.table.setVerticalHeaderLabels([tr("key_header"), tr("datatype_header"), "1", "2"])
-            self.layoutGrid.addWidget(self.table, 1, 1)
-
-            #Checkboxes
-            self.sidebar = QVBoxLayout()
-            self.tab_name = QLineEdit(os.path.splitext(os.path.basename(self.filepath))[0])
-            self.format_label = QLabel(tr("format_selector"))
-            self.key_check = QCheckBox(tr("keys"))
-            self.type_check = QCheckBox(tr("datatypes"))
-            self.key_check.setChecked(True)
-            self.type_check.setChecked(True)
-            self.key_check.stateChanged.connect(self.updateTable)
-            self.type_check.stateChanged.connect(self.updateTable)
-            self.sidebar.addWidget(self.tab_name)
-            self.sidebar.addWidget(self.format_label)
-            self.sidebar.addWidget(self.key_check)
-            self.sidebar.addWidget(self.type_check)
-
-            self.tab_name.textChanged[str].connect(self.updateConfirm)
-            self.confirm_button = QPushButton(tr("button_confirm"))
-            self.confirm_button.clicked.connect(self.confirm)
-            self.sidebar.addWidget(self.confirm_button)
-
-            self.cancel_button = QPushButton(tr("button_cancel"))
-            self.cancel_button.clicked.connect(self.deleteSelf)
-            self.sidebar.addWidget(self.cancel_button)
-
-            self.layoutGrid.addLayout(self.sidebar, 1, 0)
-
-            self.setTable()
-            self.updateConfirm()
-    
-    def setTable(self):
-        for y in [0, 1]:
-            for x in range(0, len(self.data[0])):
-                item = QTableWidgetItem(f'{x}, {y}')
-                self.setItemToggle(item, False)
-                self.table.setItem(y, x, item)
-        for y in [2, 3]:
-            for x in range(0, len(self.data[0])):
-                item = QTableWidgetItem(f'{x}, {y}')
-                self.setItemToggle(item, True)
-                self.table.setItem(y, x, item)
-        self.updateTable()
-                
-    def updateTable(self):
-        rowIndex = 0
-        if self.key_check.isChecked() == True:
-            for x in range(0, len(self.data[0])):
-                self.table.item(0, x).setText(str(self.data[rowIndex][x]))
-                self.setItemToggle(self.table.item(0, x), True)
-            rowIndex = rowIndex + 1
-        else:
-            for x in range(0, len(self.data[0])):
-                self.table.item(0, x).setText("")
-                self.setItemToggle(self.table.item(0, x), False)
-
-        if self.type_check.isChecked() == True:
-            for x in range(0, len(self.data[0])):
-                self.table.item(1, x).setText(str(self.data[rowIndex][x]))
-                self.setItemToggle(self.table.item(1, x), True)
-            rowIndex = rowIndex + 1
-        else:
-            for x in range(0, len(self.data[0])):
-                self.table.item(1, x).setText("")
-                self.setItemToggle(self.table.item(1, x), False)
-        
-        for x in range(0, len(self.data[0])):
-            self.table.item(2, x).setText(str(self.data[rowIndex][x]))
-            self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
-        
-    def confirm(self):
-        keys = []
-        types = []
-        for x in range(0, len(self.data[0])):
-            keys.append(self.table.item(0, x).text().lstrip())
-            types.append(self.table.item(1, x).text().lstrip())
-        
-        data_buffer = []
-        for row in self.data:
-            row_buffer = []
-            for item in row:
-                row_buffer.append(item.lstrip())
-            data_buffer.append(row_buffer)
-
-        if self.key_check.isChecked():
-            data_buffer.pop(0)
-        if self.type_check.isChecked():
-            data_buffer.pop(0)
-        
-        #print(self.data)
-        #print("Short Data:")
-        #print(data_buffer)
-
-        data_confirmed = [keys, types, *data_buffer]
-
-        self.parent.parent.tabs.add(data_confirmed, self.tab_name.text(), origin = self.filepath)
-        self.deleteSelf()
-
-    def deleteSelf(self):
-        self.deleteLater()
-
-    def updateConfirm(self):
-        banned_names = [""]
-
-        if (self.parent.parent.tabs.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
-            self.confirm_button.setEnabled(False)
-        else:
-            self.confirm_button.setEnabled(True)
-
-    def clearSidebar(self):
-        layout = self.sidebar
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def setItemToggle(self, item, toggle):
-        defaultFlags = QTableWidgetItem().flags()
-        if toggle:
-            item.setFlags(defaultFlags & Qt.ItemIsSelectable)
-        else:
-            item.setFlags(defaultFlags)
-
 class ImportWizard(QStackedWidget):
     def __init__(self, parent):
         super(QStackedWidget, self).__init__(parent)
@@ -697,11 +548,160 @@ class ImportWizard(QStackedWidget):
             if filepaths != None:
                 if len(filepaths) > 0:
                     for filepath in filepaths:
-                        self.addWidget(ImportMenu(self, filepath))
+                        self.addWidget(self.ImportMenu(self, filepath))
             self.setCurrentIndex(0)
         
         if filepaths != None:
             self.parent.setCurrentWidget(self)
+
+    class ImportMenu(QWidget):
+        def __init__(self, parent, filepath):
+            super(QWidget, self).__init__(parent)
+
+            self.layoutGrid = QGridLayout(self)
+            self.setLayout(self.layoutGrid)
+            self.setAutoFillBackground(True)
+
+            self.parent = parent
+
+            self.filepath = filepath
+            label = QLabel(self.filepath)
+
+            self.layoutGrid.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
+
+            #####
+            if (self.filepath == '' or not(database.test(self.filepath))):
+                self.deleteSelf()
+            else:
+                self.data = database.read_csv(self.filepath)
+                key_number = len(self.data[0])
+
+                #table
+                self.table = QTableWidget(4, key_number)
+                self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                self.table.setVerticalHeaderLabels([tr("key_header"), tr("datatype_header"), "1", "2"])
+                self.layoutGrid.addWidget(self.table, 1, 1)
+
+                #Checkboxes
+                self.sidebar = QVBoxLayout()
+                self.tab_name = QLineEdit(os.path.splitext(os.path.basename(self.filepath))[0])
+                self.format_label = QLabel(tr("format_selector"))
+                self.key_check = QCheckBox(tr("keys"))
+                self.type_check = QCheckBox(tr("datatypes"))
+                self.key_check.setChecked(True)
+                self.type_check.setChecked(True)
+                self.key_check.stateChanged.connect(self.updateTable)
+                self.type_check.stateChanged.connect(self.updateTable)
+                self.sidebar.addWidget(self.tab_name)
+                self.sidebar.addWidget(self.format_label)
+                self.sidebar.addWidget(self.key_check)
+                self.sidebar.addWidget(self.type_check)
+
+                self.tab_name.textChanged[str].connect(self.updateConfirm)
+                self.confirm_button = QPushButton(tr("button_confirm"))
+                self.confirm_button.clicked.connect(self.confirm)
+                self.sidebar.addWidget(self.confirm_button)
+
+                self.cancel_button = QPushButton(tr("button_cancel"))
+                self.cancel_button.clicked.connect(self.deleteSelf)
+                self.sidebar.addWidget(self.cancel_button)
+
+                self.layoutGrid.addLayout(self.sidebar, 1, 0)
+
+                self.setTable()
+                self.updateConfirm()
+        
+        def setTable(self):
+            for y in [0, 1]:
+                for x in range(0, len(self.data[0])):
+                    item = QTableWidgetItem(f'{x}, {y}')
+                    self.setItemToggle(item, False)
+                    self.table.setItem(y, x, item)
+            for y in [2, 3]:
+                for x in range(0, len(self.data[0])):
+                    item = QTableWidgetItem(f'{x}, {y}')
+                    self.setItemToggle(item, True)
+                    self.table.setItem(y, x, item)
+            self.updateTable()
+                    
+        def updateTable(self):
+            rowIndex = 0
+            if self.key_check.isChecked() == True:
+                for x in range(0, len(self.data[0])):
+                    self.table.item(0, x).setText(str(self.data[rowIndex][x]))
+                    self.setItemToggle(self.table.item(0, x), True)
+                rowIndex = rowIndex + 1
+            else:
+                for x in range(0, len(self.data[0])):
+                    self.table.item(0, x).setText("")
+                    self.setItemToggle(self.table.item(0, x), False)
+
+            if self.type_check.isChecked() == True:
+                for x in range(0, len(self.data[0])):
+                    self.table.item(1, x).setText(str(self.data[rowIndex][x]))
+                    self.setItemToggle(self.table.item(1, x), True)
+                rowIndex = rowIndex + 1
+            else:
+                for x in range(0, len(self.data[0])):
+                    self.table.item(1, x).setText("")
+                    self.setItemToggle(self.table.item(1, x), False)
+            
+            for x in range(0, len(self.data[0])):
+                self.table.item(2, x).setText(str(self.data[rowIndex][x]))
+                self.table.item(3, x).setText(str(self.data[rowIndex + 1][x]))
+            
+        def confirm(self):
+            keys = []
+            types = []
+            for x in range(0, len(self.data[0])):
+                keys.append(self.table.item(0, x).text().lstrip())
+                types.append(self.table.item(1, x).text().lstrip())
+            
+            data_buffer = []
+            for row in self.data:
+                row_buffer = []
+                for item in row:
+                    row_buffer.append(item.lstrip())
+                data_buffer.append(row_buffer)
+
+            if self.key_check.isChecked():
+                data_buffer.pop(0)
+            if self.type_check.isChecked():
+                data_buffer.pop(0)
+            
+            #print(self.data)
+            #print("Short Data:")
+            #print(data_buffer)
+
+            data_confirmed = [keys, types, *data_buffer]
+
+            self.parent.parent.tabs.add(data_confirmed, self.tab_name.text(), origin = self.filepath)
+            self.deleteSelf()
+
+        def deleteSelf(self):
+            self.deleteLater()
+
+        def updateConfirm(self):
+            banned_names = [""]
+
+            if (self.parent.parent.tabs.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
+                self.confirm_button.setEnabled(False)
+            else:
+                self.confirm_button.setEnabled(True)
+
+        def clearSidebar(self):
+            layout = self.sidebar
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+
+        def setItemToggle(self, item, toggle):
+            defaultFlags = QTableWidgetItem().flags()
+            if toggle:
+                item.setFlags(defaultFlags & Qt.ItemIsSelectable)
+            else:
+                item.setFlags(defaultFlags)
 
 class ModifyWizard(QStackedWidget):
     def __init__(self, parent):
