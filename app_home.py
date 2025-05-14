@@ -175,11 +175,7 @@ class MenuBar(QWidget):
         table_name = db_address[1]
         if not os.path.isdir("tmp/" + category):
             os.makedirs("tmp/" + category)
-        if action == tr("export_data"):
-            file = SaveFile.file_save(self, file_name + ".csv")
-            if file != "":
-                database.download_csv_from_database(file, db_address)
-        elif action == tr("view"):
+        if action == tr("view"):
             self.tabs.add(db_address, file_name)
 
     def create_toolbar_dropdown(self, name, parent):
@@ -262,7 +258,6 @@ class MenuBar(QWidget):
         view_dropdown = self.create_toolbar_dropdown(tr("view"), database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
 
-        # export_dropdown = self.create_toolbar_dropdown(tr("export_data"), database_dropdown)
         # self.database_dropdowns(database_names, export_dropdown)
 
         import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.parent.menus.importwizard.importData())
@@ -682,7 +677,7 @@ class ImportWizard(QStackedWidget):
         def updateConfirm(self):
             banned_names = [""]
 
-            if (self.parent.parent.tabs.test(self.tab_name.text()) or self.tab_name.text() in banned_names):
+            if (self.tab_name.text() in banned_names):
                 self.confirm_button.setEnabled(False)
             else:
                 self.confirm_button.setEnabled(True)
