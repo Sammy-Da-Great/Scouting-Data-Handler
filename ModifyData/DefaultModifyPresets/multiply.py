@@ -9,8 +9,12 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 from ModifyData.ModifyPresetPreset import *
 
 data_type = "smallint unsigned"
-constants = ["values", "points"]
+constants = []
 
-def funct(dropdown, values, points):
-    conversion = dict(zip(values.split(","), points.split(",")))
-    return(conversion[dropdown])
+def funct(a, b):
+    if a is None:
+        return(0)
+    elif b is None:
+        return(0)
+    else:
+        return (int(a) * int(b))
