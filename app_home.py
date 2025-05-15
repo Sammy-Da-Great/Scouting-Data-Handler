@@ -32,6 +32,7 @@ import tba_api
 from datetime import datetime
 import sip
 
+import language_manager
 from language_manager import tr
 
 #####
@@ -262,15 +263,15 @@ class MenuBar(QWidget):
 
         import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.parent.menus.importwizard.importData())
         # Validation
-        validation_drop = self.create_toolbar_dropdown(tr("query"), menuBar)
-        saved_queries_drop = self.create_toolbar_dropdown(tr("SQL_query"), menuBar)
-        tba_drop = self.create_toolbar_dropdown(tr("TBA_query"), validation_drop)
+        query_drop = self.create_toolbar_dropdown(tr("query"), menuBar)
+        saved_queries_drop = self.create_toolbar_dropdown(tr("SQL_query"), query_drop)
+        tba_drop = self.create_toolbar_dropdown(tr("TBA_query"), query_drop)
         tba_import_drop = self.create_toolbar_dropdown(tr("import_data"), tba_drop)
 
-        self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_team_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
-        self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), '', (None, None)))
-        self.create_toolbar_button('Request Matches (Teams)', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.generate_match_teams(config_maker.read_global_config().current_competition_key), '', (None, None)))
-        self.create_toolbar_button('Request Coral From Matches', tba_import_drop, lambda: self.tabs.createDataTabFromList('TBA Request', tba_api.get_coral_from_each_match(config_maker.read_global_config().current_competition_key), '', (None, None)))
+        # self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.add(tba_api.generate_team_data(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.add(tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Matches (Teams)', tba_import_drop, lambda: self.tabs.add(tba_api.generate_match_teams(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Coral From Matches', tba_import_drop, lambda: self.tabs.add(tba_api.get_coral_from_each_match(config_maker.read_global_config().current_competition_key), 'TBA Request'))
 
         for sql_script in database.get_sql_scripts():
             filename = sql_script[0]
@@ -1206,7 +1207,7 @@ class Settings(QWidget):
         self.config_items['table_name'] = self.SettingItem(self, tr("table_name"), set_data= self.global_config['table_name'])
         self.config_items['current_competition_key'] = self.SettingItem(self, tr("current_competition_key"), set_data= self.global_config['current_competition_key'])
         self.config_items['tba_key'] = self.SettingItem(self, tr("TBA_key"), set_data= self.global_config['tba_key'])
-        self.config_items['language'] = self.SettingDropdownItem(self, tr("language"), self.global_config['language'], ['English', 'Español', 'Português'], ['en', 'es', 'pt'])
+        self.config_items['language'] = self.SettingDropdownItem(self, tr("language"), self.global_config['language'], list(language_manager.language_list.values()), list(language_manager.language_list.keys()))
 
         for key in self.config_items.keys():
             self.layout.addWidget(self.config_items[key])

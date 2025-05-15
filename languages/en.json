@@ -1,6 +1,7 @@
 {
     "title": "Scouting Data Handler",
     "version_short": "v",
+    "language_name_long": "English",
 
     "button_confirm": "Confirm",
     "button_cancel": "Cancel",
@@ -20,7 +21,7 @@
     "view": "View",
     "import_data": "Data Import",
     "query": "Query",
-    "SQL_query": "SQL Queries",
+    "SQL_query": "SQL",
     "TBA_query": "TBA",
     "help_menu": "Help",
     "about_menu": "About",

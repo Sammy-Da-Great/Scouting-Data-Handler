@@ -11,23 +11,39 @@ import os
 from pathlib import Path
 import json
 
-language = config_maker.read_global_config().language
+current_language_code = config_maker.read_global_config().language
 
 no_language = False
 
-try:
-    current_language = json.loads(open(f'languages/{language}.json', "r", encoding="utf-8").read())
-except Exception as e:
-    print(f'Could not read languages/{language}.json\nException: {e}')
+
+
+def get_language(language_name_short):
+    try:
+        return(json.loads(open(f'languages/{language_name_short}.json', "r", encoding="utf-8").read()))
+    except Exception as e:
+        print(f'Could not read languages/{language_name_short}.json\nException: {e}')
+        return(None)
+
+current_language = get_language(current_language_code)
+if current_language is None:
     no_language = True
 
-def tr(key):
+def tr(key, language_code = None):
     buffer = key
     if no_language == False:
         try:
-            buffer = current_language[key]
+            if language_code is None:
+                buffer = current_language[key]
+            else:
+                buffer = get_language(language_name_short = language_code)[key]
         except:
-            print(f'Translation key \"{key}\" in language \"{language}\" does not exist. Returning key name.')
+            print(f'Translation key \"{key}\" in language \"{language_code}\" does not exist. Returning key name.')
     else:
-        print(f'Language \"{language}\" does not exist. Returning key name \"{key}\"')
+        print(f'Language \"{language_code}\" does not exist. Returning key name \"{key}\"')
     return(buffer)
+
+
+language_list = {}
+
+for language_code in [os.path.splitext(file)[0] for file in os.listdir("languages/") if os.path.splitext(file)[1] == '.json']:
+    language_list[language_code] = tr("language_name_long", language_code = language_code)
