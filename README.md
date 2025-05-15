@@ -1,10 +1,17 @@
 # Scouting Data Handler
-Scouting Data Handler is an app designed to reformat FRC (FIRST Robotics Competition) scouting data. The main purpose of the app is to provide a method to standardize datasets from different teams. Data can be manipulated into nearly any format. \
-Currently, Scouting Data Handler only interfaces SQL databases and .csv files.
+Scouting Data Handler is an app designed to reformat FRC (FIRST Robotics Competition) for sharing data within the Coalition of Planets scouting alliance. \
+The app is highly customizable and is intended to be modified to the user's preferences. It does not require modification to function.
+
+## Features
+- Directly interface .csv files and MySQL databases
+- Perform TBA and SQL queries in-app
+- Concatenate data tables
+- Reformat data using user-defined functions
+- Available in English, Spanish, and Portuguese, with customizable language localization
 ## Requirements
-MySQL \
-Python
-## 
+- MySQL
+- Python
+## GPL-3.0 License
 Scouting Data Handler, a custom SQL interface
 Copyright (C) 2025 Samuel Husmann
 
