@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.2"
+version = "2025.5.19"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -1337,12 +1337,16 @@ class Settings(QWidget):
 class License(QTextBrowser):
     def __init__(self, parent):
         super(QWidget, self).__init__()
+        self.setOpenLinks(False)
+        self.setOpenExternalLinks(False)
 
         self.setMarkdown(database.get_license())
 
 class ReadMe(QTextBrowser):
     def __init__(self, parent):
         super(QWidget, self).__init__()
+        self.setOpenLinks(False)
+        self.setOpenExternalLinks(False)
 
         self.setMarkdown(database.get_readme())
 
