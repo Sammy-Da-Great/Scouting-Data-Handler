@@ -19,7 +19,7 @@
     "settings_menu": "Definições",
     "database_dropdown": "Banco de Dados",
     "view": "Ver",
-    "import_data": "Importar Dados",
+    "import_data": "Importar .csv",
     "query": "Pesquisar",
     "SQL_query": "SQL",
     "TBA_query": "TBA",
