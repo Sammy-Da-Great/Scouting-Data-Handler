@@ -10,9 +10,9 @@
     "file_dropdown": "Archivo",
     "exit": "Salir",
     "edit_dropdown": "Editar",
-    "save_current_SQL": "Guarda Pestaña Actual para SQL",
-    "save_current_SQL_as": "Guarda Pestaña Actual para SQL como...",
-    "save_current_csv_as": "Guarda Pestaña Actual como .csv como",
+    "save_current_SQL": "Guardar Pestaña Actual para SQL",
+    "save_current_SQL_as": "Guardar Pestaña Actual para SQL como...",
+    "save_current_csv_as": "Guardar Pestaña Actual como .csv como",
     "concat_menu": "Unirse las Pestañas",
     "modify_menu": "Formatear",
     "data_menu": "Ver Datos",
@@ -50,9 +50,13 @@
     "key": "Claves",
     "modify_keys": "Modificar Claves",
     "direct": "Poblar Automáticamente",
-    "open_presets_folder": "Open Presets Folder",
+    "open_presets_folder": "Abrir La Carpeta de Las Conversiónes",
     "save_conversion": "Guardar la Conversión",
     "load_conversion": "Cargar una Conversión",
 
-    "modify_target": "Formateando"
+    "modify_target": "Formateando",
+
+    "comma_separated": "Separados por Comas (*.csv)",
+    "save_file": "Guardar",
+    "open_file": "Abrir"
 }

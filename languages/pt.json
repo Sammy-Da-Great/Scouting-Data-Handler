@@ -52,5 +52,11 @@
     "direct": "Preencher Automaticamente",
     "open_presets_folder": "Abrir a Pasta das Conversão",
     "save_conversion": "Salvar a Conversão",
-    "load_conversion": "Carregar uma Conversão"
+    "load_conversion": "Carregar uma Conversão",
+
+    "modify_target": "Reformatando",
+
+    "comma_separated": "Separados por Vírgulas (*.csv)",
+    "save_file": "Salvar Pasta",
+    "open_file": "Abrir Pasta"
 }

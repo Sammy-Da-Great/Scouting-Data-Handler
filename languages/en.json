@@ -54,5 +54,9 @@
     "save_conversion": "Save Conversion",
     "load_conversion": "Load Conversion",
 
-    "modify_target": "Converting"
+    "modify_target": "Converting",
+
+    "comma_separated": "Comma Separated (*.csv)",
+    "save_file": "Save File",
+    "open_file": "Open File"
 }

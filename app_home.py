@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.19"
+version = "2025.5.21"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -301,20 +301,19 @@ class SaveFile(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__()
         self.setGeometry(50, 50, 500, 300)
-        self.setWindowTitle("Export File")
 
     def file_save(self, name):
-        filename = QFileDialog.getSaveFileName(self, "Save File", name, "Comma Separated (*.csv)")[0]
+        filename = QFileDialog.getSaveFileName(self, tr("save_file"), name, tr("comma_separated"))[0]
         return filename
 
-    def file_dialog(self, name = "", extension = "Comma Separated (*.csv)", many = False): # Returns a filepath
+    def file_dialog(self, name = "", extension = tr("comma_separated"), many = False): # Returns a filepath
         if many == False:
-            return QFileDialog.getOpenFileName(self, "Open File", name, extension)[0]
+            return QFileDialog.getOpenFileName(self, tr("open_file"), name, extension)[0]
         else:
-            return QFileDialog.getOpenFileNames(self, "Open File", name, extension)[0]
+            return QFileDialog.getOpenFileNames(self, tr("open_file"), name, extension)[0]
 
-    def data_save(self, name = "", extension = "Comma Separated (*.csv)"): # Saves to a chosen .csv
-        return QFileDialog.getSaveFileName(self, "Save File", name, extension)[0]
+    def data_save(self, name = "", extension = tr("comma_separated")): # Saves to a chosen .csv
+        return QFileDialog.getSaveFileName(self, tr("save_file"), name, extension)[0]
 
 class DataTab(QStackedWidget):
     def __init__(self, parent, data, origin = None):
