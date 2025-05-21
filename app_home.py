@@ -537,15 +537,15 @@ class ImportWizard(QStackedWidget):
             for index in range(self.count()):
                 self.widget(index).deleteLater()
 
-            if filepaths == None:
+            if filepaths == None or not filepaths:
                 filepaths = SaveFile.file_dialog(self, many = True)
-            if filepaths != None:
+            if filepaths:
                 if len(filepaths) > 0:
                     for filepath in filepaths:
                         self.addWidget(self.ImportMenu(self, filepath))
             self.setCurrentIndex(0)
         
-        if filepaths != None:
+        if filepaths:
             self.parent.setCurrentWidget(self)
 
     class ImportMenu(QWidget):
