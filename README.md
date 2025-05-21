@@ -1,5 +1,5 @@
 # Scouting Data Handler
-Scouting Data Handler is an app designed to reformat FRC (FIRST Robotics Competition) for sharing data within the Coalition of Planets scouting alliance. \
+Scouting Data Handler is an app designed to reformat FRC (FIRST Robotics Competition) for sharing data within the Olympia Robotics Federation's (ORF) Coalition of Planets scouting alliance. \
 The app is highly customizable and is intended to be modified to the user's preferences. It does not require modification to function.
 
 ## Features

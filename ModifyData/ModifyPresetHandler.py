@@ -112,7 +112,6 @@ def runConversion(convert_data, data, constants):
             parameters = list(zip([not(param in module[2]) for param in inspect.signature(module[1]).parameters], conversion['parameters']))
             for parameter in parameters:
                 if parameter[0]:
-                    print(f'appended {lookup_datatype[parameter[1]]}')
                     data_types.append(lookup_datatype[parameter[1]])
 
             #conversion['data_type'] = getModule(conversion['preset'], custom = (conversion['category'] == "Custom"))[0].data_type
@@ -146,7 +145,7 @@ def runConversion(convert_data, data, constants):
                     row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
                 except Exception as e:
                     row.append("ERROR")
-                    print(f"preset {conversion['preset']} experienced an error with parameters: {parameters}")
+                    print(f"preset {conversion['preset']} experienced an error with parameters: {parameters} Error: {e}")
 
 
             row = [str(row_item) for row_item in row]

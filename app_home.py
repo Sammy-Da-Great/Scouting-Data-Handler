@@ -661,10 +661,7 @@ class ImportWizard(QStackedWidget):
                 data_buffer.pop(0)
             if self.type_check.isChecked():
                 data_buffer.pop(0)
-            
-            #print(self.data)
-            #print("Short Data:")
-            #print(data_buffer)
+
 
             data_confirmed = [keys, types, *data_buffer]
 
@@ -814,7 +811,6 @@ class ModifyWizard(QStackedWidget):
                 #Load Conversion
                 for row in data['rows']:
                     self.addItem(key = row['name'], custom = row['category'], preset = row['preset'], keylist = row['keys'])
-                print(data['rows'])
 
         def saveConversion(self):
             name = SaveFile.file_save(self, "ModifyData\\ConversionPresets\\")
