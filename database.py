@@ -209,6 +209,7 @@ def get_readme():
 
 def get_sql_scripts():
     filenames = [filename for (dirpath, dirname, filename) in os.walk('Queries')][0]
+    filenames = [filename for filename in filenames if filename.endswith(".sql")]
     filepaths = [f'Queries/{filename}' for filename in filenames]
     data = list(zip(filenames, filepaths))
     return data
