@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.21"
+version = "2025.5.22"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -272,12 +272,11 @@ class MenuBar(QWidget):
         query_drop = self.create_toolbar_dropdown(tr("query"), menuBar)
         saved_queries_drop = self.create_toolbar_dropdown(tr("SQL_query"), query_drop)
         tba_drop = self.create_toolbar_dropdown(tr("TBA_query"), query_drop)
-        tba_import_drop = self.create_toolbar_dropdown(tr("import_data"), tba_drop)
 
         # self.create_toolbar_button('Request Teams', tba_import_drop, lambda: self.tabs.add(tba_api.generate_team_data(config_maker.read_global_config().current_competition_key), 'TBA Request'))
-        self.create_toolbar_button('Request Matches', tba_import_drop, lambda: self.tabs.add(tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), 'TBA Request'))
-        self.create_toolbar_button('Request Matches (Teams)', tba_import_drop, lambda: self.tabs.add(tba_api.generate_match_teams(config_maker.read_global_config().current_competition_key), 'TBA Request'))
-        self.create_toolbar_button('Request Coral From Matches', tba_import_drop, lambda: self.tabs.add(tba_api.get_coral_from_each_match(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Matches', tba_drop, lambda: self.tabs.add(tba_api.generate_match_data(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Matches (Teams)', tba_drop, lambda: self.tabs.add(tba_api.generate_match_teams(config_maker.read_global_config().current_competition_key), 'TBA Request'))
+        self.create_toolbar_button('Request Coral From Matches', tba_drop, lambda: self.tabs.add(tba_api.get_coral_from_each_match(config_maker.read_global_config().current_competition_key), 'TBA Request'))
 
         for sql_script in database.get_sql_scripts():
             filename = sql_script[0]
