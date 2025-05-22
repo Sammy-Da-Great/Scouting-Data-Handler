@@ -168,8 +168,9 @@ class MenuBar(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
         self.parent = parent
-        self._createMenuBar()
         self.tabs = parent.tabs
+        self.menus = parent.menus
+        self._createMenuBar()
 
     def set_open_table(self, button, target_database):
         button.triggered.connect(lambda: self.open_table(button.text(), (target_database, button.text()), button.parent().parent().title() + "/" + button.parent().title() + "/", button.parent().parent().title()))
@@ -241,32 +242,32 @@ class MenuBar(QWidget):
         self.saveActionCSV = self.create_toolbar_button(tr("save_current_csv_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button(tr("exit"), file_dropdown, self.parent.close)
 
-        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.isMenu(self.parent.menus.tabs) and self.parent.menus.tabs.test()))
+        file_dropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.menus.isMenu(self.tabs) and self.tabs.test()))
         
         #
         editDropdown = self.create_toolbar_dropdown(tr("edit_dropdown"), menuBar)
-        merge_tabs = self.create_toolbar_button(tr("concat_menu"), editDropdown, lambda: self.parent.menus.concatWizard.createMenu())
-        modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.parent.menus.modifyWizard.createMenu())
-        data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.tabs))
-        settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.parent.menus.settings.display())
+        merge_tabs = self.create_toolbar_button(tr("concat_menu"), editDropdown, lambda: self.menus.concatWizard.createMenu())
+        modify_keys = self.create_toolbar_button(tr("modify_menu"), editDropdown, lambda: self.menus.modifyWizard.createMenu())
+        data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.menus.setCurrentWidget(self.tabs))
+        settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.menus.settings.display())
 
-        editDropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.parent.menus.tabs))
-        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([data_button], [], self.parent.menus.tabs))
-        editDropdown.aboutToShow.connect(lambda: self.parent.menus.disableItemsOnMenu([settings_button], [], self.parent.menus.settings))
+        editDropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([data_button], [], self.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([settings_button], [], self.menus.settings))
 
         #Database
         database_names = database.get_all_databases()
 
         database_dropdown = self.create_toolbar_dropdown(tr("database_dropdown"), menuBar)
 
-        self.parent.menus.currentChanged.connect(lambda: self.parent.menus.disableItemsOnMenu([], [database_dropdown], self.parent.menus.tabs))
+        self.menus.currentChanged.connect(lambda: self.menus.disableItemsOnMenu([], [database_dropdown], self.menus.tabs))
 
         view_dropdown = self.create_toolbar_dropdown(tr("view"), database_dropdown)
         self.database_dropdowns(database_names, view_dropdown)
 
         # self.database_dropdowns(database_names, export_dropdown)
 
-        import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.parent.menus.importwizard.importData())
+        import_button = self.create_toolbar_button(tr("import_data"), database_dropdown, lambda: self.menus.importwizard.importData())
         # Validation
         query_drop = self.create_toolbar_dropdown(tr("query"), menuBar)
         saved_queries_drop = self.create_toolbar_dropdown(tr("SQL_query"), query_drop)
@@ -286,8 +287,8 @@ class MenuBar(QWidget):
 
         #
         helpDropdown = self.create_toolbar_dropdown(tr("help_menu"), menuBar)
-        self.create_toolbar_button(tr("about_menu"), helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.readme))
-        self.create_toolbar_button(tr("license_menu"), helpDropdown, lambda: self.parent.menus.setCurrentWidget(self.parent.menus.license))
+        self.create_toolbar_button(tr("about_menu"), helpDropdown, lambda: self.menus.setCurrentWidget(self.menus.readme))
+        self.create_toolbar_button(tr("license_menu"), helpDropdown, lambda: self.menus.setCurrentWidget(self.menus.license))
         #
 
     def manyDataCreateTab(self, filename, filepath):
