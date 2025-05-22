@@ -148,11 +148,14 @@ class Tabs(QTabWidget):
         
         self.addTab(DataTab(self, data, origin = origin), name)
 
-    def test(self, name):
-        if self.count() >= 0:
-            return name in [self.tabText(i) for i in range(self.count())]
+    def test(self, name = None):
+        if name is None:
+            return self.count() > 0
         else:
-            return False
+            if self.count() > 0:
+                return name in [self.tabText(i) for i in range(self.count())]
+            else:
+                return False
     
     def tab_list(self):
         return [self.widget(i) for i in range(self.count())]
@@ -237,6 +240,8 @@ class MenuBar(QWidget):
         self.saveActionSQLAs = self.create_toolbar_button(tr("save_current_SQL_as"), file_dropdown, lambda: self.tabs.saveCurrentTabSQL(save_as = True))
         self.saveActionCSV = self.create_toolbar_button(tr("save_current_csv_as"), file_dropdown, lambda: self.tabs.saveCurrentTabAsCSV())
         self.exitAction = self.create_toolbar_button(tr("exit"), file_dropdown, self.parent.close)
+
+        file_dropdown.aboutToShow.connect(lambda: self.parent.menus.hideItemsOnCondition([], [self.saveActionSQL, self.saveActionSQLAs, self.saveActionCSV], self.parent.menus.isMenu(self.parent.menus.tabs) and self.parent.menus.tabs.test()))
         
         #
         editDropdown = self.create_toolbar_dropdown(tr("edit_dropdown"), menuBar)
@@ -1160,6 +1165,9 @@ class MenuManager(QStackedWidget):
         self.addWidget(self.modifyWizard)
 
         self.setCurrentWidget(self.tabs)
+
+    def isMenu(self, menu):
+        return self.currentIndex() == self.indexOf(menu)
 
     def disableItemsOnMenu(self, items_disabled, items_enabled, menu):
         menu_selected = (self.currentIndex() == self.indexOf(menu))
