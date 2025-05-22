@@ -12,6 +12,9 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 if not os.path.isdir("tmp"):
         os.makedirs("tmp")
+        
+if not os.path.isdir("Queries"):
+        os.makedirs("Queries")
 
 
 import config_maker

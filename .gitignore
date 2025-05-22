@@ -8,3 +8,4 @@ tmp/
 ModifyData/ModifyPresets/*
 ModifyData/ConversionPresets/*
 Queries/*
+!Queries\template_query.sql

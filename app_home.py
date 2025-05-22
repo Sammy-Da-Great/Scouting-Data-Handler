@@ -293,7 +293,7 @@ class MenuBar(QWidget):
     def manyDataCreateTab(self, filename, filepath):
         data = database.run_sql_script(filepath)
         for data_item in zip(data, range(len(data))):
-            self.tabs.createDataTabFromList(f'{filename}-{data_item[1]}', data_item[0], '', (None, None))
+            self.tabs.add(data_item[0], f'{filename}')
 
     def sqlScriptButton(self, filename, filepath, drop):
         self.create_toolbar_button(filename, drop, lambda: self.manyDataCreateTab(filename, filepath))
