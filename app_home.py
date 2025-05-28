@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.22"
+version = "2025.5.28"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -486,14 +486,16 @@ class DataTab(QStackedWidget):
                 row_total = len(data)
                 column_total = len(data[0])
                 for row in range(0, row_total):
-                    for column in range(0, column_total):
-                        try:
-                            item = str(data[row][column])
-                            self.setValue.emit(row - 1, column, item)
-                            self.progressChanged.emit((row * column_total) + column + 1)
-                        except Exception as e:
-                            print(f'item {column}, {row - 1}: {str(e)}')
-                            self.errorOccurred.emit(str(e))
+                    if data[row]:
+                        for column in range(0, column_total):
+                            try:
+                                item = str(data[row][column])
+                                self.setValue.emit(row - 1, column, item)
+                                self.progressChanged.emit((row * column_total) + column + 1)
+                            except Exception as e:
+                                self.errorOccurred.emit(f'item {column}, {row}: {str(e)}')
+                    else:
+                        self.errorOccurred.emit(f'row {row} is empty')
                 self.on_finished.emit()
 
 class SaveSQLAsDialog(QDialog):
