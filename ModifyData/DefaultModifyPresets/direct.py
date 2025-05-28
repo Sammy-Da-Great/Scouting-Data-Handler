@@ -6,8 +6,13 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-data_type = "varchar(45)"
+from ModifyData.ModifyPresetPreset import *
+
+data_type = ""
 constants = []
 
-def funct(string):
-    return (string)
+def funct(value):
+    return(value)
+
+def get_data_type(data_type_var, original_data_types):
+    return(original_data_types[0])

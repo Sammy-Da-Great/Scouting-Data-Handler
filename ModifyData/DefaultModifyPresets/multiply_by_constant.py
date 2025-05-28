@@ -6,9 +6,15 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-data_type = "smallint unsigned"
-constants = ["values", "points"]
+from ModifyData.ModifyPresetPreset import *
 
-def funct(dropdown, values, points):
-    conversion = dict(zip(values.split(","), points.split(",")))
-    return(conversion[dropdown])
+data_type = "smallint unsigned"
+constants = ["b"]
+
+def funct(a, b):
+    if a is None:
+        return(0)
+    elif b is None or b == "":
+        return(0)
+    else:
+        return (int(a) * int(b))

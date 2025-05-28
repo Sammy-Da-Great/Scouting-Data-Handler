@@ -7,3 +7,5 @@ __pycache__/
 tmp/
 ModifyData/ModifyPresets/*
 ModifyData/ConversionPresets/*
+Queries/*
+!Queries/template_query.sql

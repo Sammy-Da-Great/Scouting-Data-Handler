@@ -8,15 +8,14 @@ along with this program. If not, see https://www.gnu.org/licenses/.
 
 from ModifyData.ModifyPresetPreset import *
 
-data_type = "smallint unsigned"
-constants = []
+data_type = "varchar(45)"
+constants = ["prefix", "suffix"]
 
-def funct(a, b):
-    if a is None and b is None:
-        return(None)
-    else:
-        if a is None:
-            a = 0
-        if b is None:
-            b = 0
-        return (int(a) + int(b))
+def funct(prefix, column, suffix):
+    if prefix is None:
+        prefix = ""
+    if suffix is None:
+        suffix = ""
+    if column is None:
+        column = ""
+    return (prefix + column + suffix)

@@ -6,8 +6,15 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-data_type = "timestamp"
+from ModifyData.ModifyPresetPreset import *
+
+data_type = "smallint unsigned"
 constants = []
 
-def funct(timestamp):
-    return (timestamp)
+def funct(a, b):
+    if a is None:
+        return(0)
+    elif b is None:
+        return(0)
+    else:
+        return (int(a) * int(b))

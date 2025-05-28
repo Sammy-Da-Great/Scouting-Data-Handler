@@ -60,7 +60,13 @@ def readConversion(filepath):
 
 def runFunct(parameters, file, custom = False):
     funct = getFunct(file, custom)
-    return(funct(*parameters))
+    parameters_buffer = []
+    for parameter in parameters:
+        if parameter == "None" or parameter == '':
+            parameters_buffer.append(None)
+        else:
+            parameters_buffer.append(parameter)
+    return(funct(*parameters_buffer))
     
 def getFunct(file, custom = False):
     return(getModule(file, custom)[1])
@@ -76,27 +82,41 @@ def getModule(file, custom = False):
     mod_name, func_name = function_string.rsplit('.',1)
     mod = importlib.import_module(mod_name)
     funct = getattr(mod, func_name)
-    return((mod, funct, getattr(mod, "constants")))
+    return((mod, funct, getattr(mod, "constants"), getattr(mod, "get_data_type")))
 
 def runConversion(convert_data, data, constants):
-    if convert_data[0] == data[0]:
+    if all(key in convert_data[0] for key in data[0]):
         lookup = dict()
         for key in data[0]:
             lookup[str(key)] = len(lookup)
-        
-        print(f'convert_data: {convert_data}')
-        print(f'constants: {constants}')
+
+        lookup_datatype = dict()
+        for key_datatype_pair in list(zip(data[0], data[1])):
+            lookup_datatype[str(key_datatype_pair[0])] = str(key_datatype_pair[1])
 
         conversion_names = [conversion[0] for conversion in convert_data[1:]]
         
         conversions = dict()
 
-        for conversion_data in convert_data[1:]:
+        for conversion_data_pair in list(zip(convert_data[1:], range(len(convert_data[1:])))):
+            conversion_data = conversion_data_pair[0]
             conversion = {}
             conversion['category'] = conversion_data[1]
             conversion['preset'] = conversion_data[2]
             conversion['parameters'] = conversion_data[3:]
-            conversion['data_type'] = getModule(conversion['preset'], custom = (conversion['category'] == "Custom"))[0].data_type
+
+
+            module = getModule(conversion['preset'], custom = (conversion['category'] == "Custom"))
+
+            data_types = []
+            parameters = list(zip([not(param in module[2]) for param in inspect.signature(module[1]).parameters], conversion['parameters']))
+            for parameter in parameters:
+                if parameter[0]:
+                    data_types.append(lookup_datatype[parameter[1]])
+
+            #conversion['data_type'] = getModule(conversion['preset'], custom = (conversion['category'] == "Custom"))[0].data_type
+            conversion['data_type'] = module[3](getattr(module[0], "data_type"), data_types)
+
             conversions[conversion_data[0]] = conversion
 
         for conversion_data in list(zip(conversion_names, constants[1:])):
@@ -121,7 +141,12 @@ def runConversion(convert_data, data, constants):
                         parameter_buffer = parameter[0]
                     parameters.append(parameter_buffer) 
 
-                row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
+                try:
+                    row.append(runFunct(parameters, conversion['preset'], conversion['category'] == "Custom"))
+                except Exception as e:
+                    row.append("ERROR")
+                    print(f"preset {conversion['preset']} experienced an error with parameters: {parameters} Error: {e}")
+
 
             row = [str(row_item) for row_item in row]
             data_rows.append(row)

@@ -6,14 +6,16 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
+from ModifyData.ModifyPresetPreset import *
+
 data_type = "tinyint(1)"
 constants = []
 
 def funct(boolean):
     boolean_buffer = str(boolean)
     
-    true_list = ["True", "true", "1"]
-    false_list = ["False", "false", "0"]
+    true_list = ["True", "TRUE", "true", "1"]
+    false_list = ["False", "FALSE", "false", "0"]
     
     if boolean_buffer in true_list:
         boolean_buffer = "1"

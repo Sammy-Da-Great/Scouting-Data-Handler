@@ -1,0 +1,62 @@
+{
+    "title": "Formador de Datos de Scouting",
+    "version_short": "v",
+    "language_name_long": "Español",
+
+    "button_confirm": "Confirmar",
+    "button_cancel": "Cancelar",
+
+    "label_database": "Base de Datos",
+    "file_dropdown": "Archivo",
+    "exit": "Salir",
+    "edit_dropdown": "Editar",
+    "save_current_SQL": "Guardar Pestaña Actual para SQL",
+    "save_current_SQL_as": "Guardar Pestaña Actual para SQL como...",
+    "save_current_csv_as": "Guardar Pestaña Actual como .csv como",
+    "concat_menu": "Unirse las Pestañas",
+    "modify_menu": "Formatear",
+    "data_menu": "Ver Datos",
+    "settings_menu": "Configuraciónes",
+    "database_dropdown": "Base de Datos",
+    "view": "Ver",
+    "import_data": "Importar .csv",
+    "query": "Consultar",
+    "SQL_query": "SQL",
+    "TBA_query": "TBA",
+    "help_menu": "Ayuda",
+    "about_menu": "Sobre",
+    "license_menu": "Derechos",
+
+    "merge_tabs_default_name": "Pestañas Fusionadas",
+    "format_selector": "Formato:",
+
+    "host": "Servidor",
+    "user": "Usuario",
+    "password": "Contraseña",
+    "database_name": "Nombre del Base de Datos",
+    "table_name": "Nombre de la Tabla",
+    "current_competition_key": "Clave de Competición Actual",
+    "TBA_key": "Clave de TBA",
+    "language": "Idioma",
+    "restart_needed": "Unos cambios necesitan reiniciar la app.",
+
+    "key_header": "Clave",
+    "keys": "Claves",
+    "datatype_header": "Tipo",
+    "datatypes": "Tipos",
+
+    "name": "Nombre",
+    "tab_name": "Nombre de Pestaña",
+    "key": "Claves",
+    "modify_keys": "Modificar Claves",
+    "direct": "Poblar Automáticamente",
+    "open_presets_folder": "Abrir La Carpeta de Las Conversiónes",
+    "save_conversion": "Guardar la Conversión",
+    "load_conversion": "Cargar una Conversión",
+
+    "modify_target": "Formateando",
+
+    "comma_separated": "Separados por Comas (*.csv)",
+    "save_file": "Guardar",
+    "open_file": "Abrir"
+}
