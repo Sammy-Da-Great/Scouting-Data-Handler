@@ -179,7 +179,7 @@ def read_table(db_address, header = True, types = True):
 
 def read_csv(filepath):
     data = []
-    with open(filepath, 'r') as stream:
+    with open(filepath, 'r', encoding="utf-8") as stream:
         for rowdata in csv.reader(stream):
             data.append(rowdata)
     return data
