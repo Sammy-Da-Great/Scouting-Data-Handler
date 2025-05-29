@@ -102,7 +102,10 @@ class Tabs(QTabWidget):
     def saveCurrentTabAsCSV(self):
         file = SaveFile.data_save(self, name = self.tabText(self.currentIndex()) + ".csv")
         if file != "":
-            database.write_csv(file, self.current_tab().data())
+            try:
+                database.write_csv(file, self.current_tab().data())
+            except Exception as e:
+                QMessageBox.critical(self, "Error Occurred", str(e))
     
     def saveCurrentTabSQL(self, save_as = False):
 
@@ -411,8 +414,17 @@ class DataTab(QStackedWidget):
             for row in range(self.table.rowCount()):
                 row_buffer = []
                 for column in range(self.table.columnCount()):
-                    item = self.table.item(row, column)
-                    row_buffer.append(item.text())
+                    try:
+                        item = self.table.item(row, column)
+
+                        if item is None:
+                            item_text = ""
+                        else:
+                            item_text = item.text()
+
+                        row_buffer.append(item_text)
+                    except Exception as e:
+                        QMessageBox.critical(self, f"Error Occurred When Retrieving Data From {self.parent.name()}", f'Item ({row}, {column}): {e}')
                 data.append(row_buffer)
             return data
 

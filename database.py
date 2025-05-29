@@ -186,7 +186,7 @@ def read_csv(filepath):
 
 def write_csv(filepath, data):
     if filepath != None:
-        with open(filepath, 'w', newline='') as stream:
+        with open(filepath, 'w', newline='', encoding="utf-8") as stream:
             writer = csv.writer(stream)
             writer.writerows(data)
 
