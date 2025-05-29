@@ -238,7 +238,7 @@ def run_sql_script(filepath, parameters = None):
             except:
                 print(f'Query does not return table')
 
-            if query_data != []:
+            if query_data:
                 query_data = [list(item) for item in query_data]
 
                 command_data = [list(item) for item in zip(*columns_and_datatypes(command))]
