@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.29"
+version = "2025.5.30"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -264,7 +264,8 @@ class MenuBar(QWidget):
         data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.menus.setCurrentWidget(self.tabs))
         settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.menus.settings.display())
 
-        editDropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnCondition([], [merge_tabs, modify_keys], self.tabs.test()))
         editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([data_button], [], self.menus.tabs))
         editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([settings_button], [], self.menus.settings))
 
@@ -1483,36 +1484,25 @@ class QListDragAndDrop(QListWidget):
        self.setAcceptDrops(True)
 
 class ScrollLabel(QScrollArea):
-
-    # constructor
     def __init__(self, *args, **kwargs):
         QScrollArea.__init__(self, *args, **kwargs)
 
-        # making widget resizable
         self.setWidgetResizable(True)
 
-        # making qwidget object
         content = QWidget(self)
         self.setWidget(content)
 
-        # vertical box layout
         lay = QVBoxLayout(content)
 
-        # creating label
         self.label = QLabel(content)
 
-        # setting alignment to the text
         self.label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        # making label multi-line
         self.label.setWordWrap(True)
 
-        # adding label to the layout
         lay.addWidget(self.label)
 
-    # the setText method
     def setText(self, text):
-        # setting text to the label
         self.label.setText(text)
 
 def start_app():
