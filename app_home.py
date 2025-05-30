@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.28"
+version = "2025.5.29"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -131,10 +131,20 @@ class Tabs(QTabWidget):
             dialog = SaveSQLAsDialog(db_address = db_address)
             if dialog.exec() == 1:
                 db_address = (dialog.databaseInput.text(), dialog.tableInput.text())
+                tab.db_address = db_address
             else:
                 db_address = (None, None)
-                 
-        database.write_to_database(data[1:], db_address, data[0])
+        
+        if all(db_address):
+            import mysql.connector
+            try:
+                database.write_to_database(data[1:], db_address, data[0])
+            except mysql.connector.errors.ProgrammingError as e:
+                QMessageBox.critical(self, "Failed to Save Data", str(e))
+                print(f'Failed to save data: {e}')
+            except Exception as e:
+                QMessageBox.critical(self, "Error Occurred", str(e))
+                print(f'Error Occurred: {e}')
 
     def current_tab(self):
         return self.currentWidget()

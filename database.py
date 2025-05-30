@@ -68,51 +68,46 @@ def get_csv_from_database(file_name, db_address):
     return('tmp/' + file_name)
 
 def write_to_database(data, db_address, columnHeaders):
-    try:
-        if (db_address[0] != None) or (db_address[1] != None):
-            database = db_address[0]
-            table = db_address[1]
-            dataTypes = [dataType.lstrip() for dataType in data[0]]
-            data.pop(0)
-            createColumnQuery = ""
-            for i in range(len(columnHeaders)):
-                if (i < len(columnHeaders) - 1):
-                    createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}, '
+    if (db_address[0] != None) or (db_address[1] != None):
+        database = db_address[0]
+        table = db_address[1]
+        dataTypes = [dataType.lstrip() for dataType in data[0]]
+        data.pop(0)
+        createColumnQuery = ""
+        for i in range(len(columnHeaders)):
+            if (i < len(columnHeaders) - 1):
+                createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}, '
+            else:
+                createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}'
+        query(f'DROP TABLE IF EXISTS {database}.{table};')
+        query(f'CREATE DATABASE IF NOT EXISTS {database};')
+        query(f'CREATE TABLE {database}.{table} ({createColumnQuery});')
+        for data_row in data:
+            row = [data_item.lstrip() for data_item in data_row]
+            row_buffer = []
+            for item in row:
+                if item == 'None' or item == '':
+                    row_buffer.append('NULL')
                 else:
-                    createColumnQuery += f'{columnHeaders[i]} {dataTypes[i]}'
-            query(f'DROP TABLE IF EXISTS {database}.{table};')
-            query(f'CREATE DATABASE IF NOT EXISTS {database};')
-            query(f'CREATE TABLE {database}.{table} ({createColumnQuery});')
-            for data_row in data:
-                row = [data_item.lstrip() for data_item in data_row]
-                row_buffer = []
-                for item in row:
-                    if item == 'None' or item == '':
-                        row_buffer.append('NULL')
-                    else:
-                        row_buffer.append(item)
-                row = row_buffer
-                columnQueryList = []
-                valueQueryList = []
-                separator = ", "
-                for i in range(len(columnHeaders)):
-                    columnQueryList.append(f'{columnHeaders[i]}')
-                    if row[i] == 'NULL':
-                        valueQueryList.append(f'{row[i]}')
-                    else:
-                        valueQueryList.append(f'\"{row[i]}\"')
-                columnQuery = separator.join(columnQueryList)
-                valueQuery = separator.join(valueQueryList)
-                try:
-                    query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
-                except Exception as e:
-                    print(e)
-        else:
-            print(f'{db_address} is not a valid db_address')
-    except mysql.connector.errors.ProgrammingError as e:
-        print(f'Failed to save data: {e}')
-    except Exception as e:
-        print(f'Failed to save data: {e}')
+                    row_buffer.append(item)
+            row = row_buffer
+            columnQueryList = []
+            valueQueryList = []
+            separator = ", "
+            for i in range(len(columnHeaders)):
+                columnQueryList.append(f'{columnHeaders[i]}')
+                if row[i] == 'NULL':
+                    valueQueryList.append(f'{row[i]}')
+                else:
+                    valueQueryList.append(f'\"{row[i]}\"')
+            columnQuery = separator.join(columnQueryList)
+            valueQuery = separator.join(valueQueryList)
+            #try:
+            query(f'INSERT INTO {database}.{table} ({columnQuery}) VALUES ({valueQuery});')
+            #except Exception as e:
+            #    print(e)
+    else:
+        print(f'{db_address} is not a valid db_address')
 
 def download_csv_from_database(filepath, db_address):
     database = db_address[0]
@@ -220,7 +215,7 @@ def run_sql_script(filepath, parameters = None):
         sqlFile = fd.read()
         fd.close()
 
-        print(f'script: {sqlFile}')
+        print(f'script: {sqlFile}')  
 
         sqlCommands = sqlFile.split(';')
         sqlCommands = [command.replace('\n', ' ') for command in sqlCommands]
