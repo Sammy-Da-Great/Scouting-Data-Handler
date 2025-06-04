@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.30"
+version = "2025.6.4"
 
 class Window(QMainWindow):
     """Main Window."""
