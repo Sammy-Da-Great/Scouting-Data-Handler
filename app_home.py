@@ -1,5 +1,5 @@
 '''
-Scouting Data Handler, a custom SQL interface
+Coalition DataBeam, a custom SQL interface
 Copyright (C) 2025  Samuel Husmann
 
 This program is free software: you can redistribute it and/or modify
@@ -68,7 +68,7 @@ palette.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, disabled_color)
 
 
 
-version = "2025.5.28"
+version = "2025.6.4"
 
 class Window(QMainWindow):
     """Main Window."""
@@ -102,7 +102,10 @@ class Tabs(QTabWidget):
     def saveCurrentTabAsCSV(self):
         file = SaveFile.data_save(self, name = self.tabText(self.currentIndex()) + ".csv")
         if file != "":
-            database.write_csv(file, self.current_tab().data())
+            try:
+                database.write_csv(file, self.current_tab().data())
+            except Exception as e:
+                QMessageBox.critical(self, "Error Occurred", str(e))
     
     def saveCurrentTabSQL(self, save_as = False):
 
@@ -128,10 +131,20 @@ class Tabs(QTabWidget):
             dialog = SaveSQLAsDialog(db_address = db_address)
             if dialog.exec() == 1:
                 db_address = (dialog.databaseInput.text(), dialog.tableInput.text())
+                tab.db_address = db_address
             else:
                 db_address = (None, None)
-                 
-        database.write_to_database(data[1:], db_address, data[0])
+        
+        if all(db_address):
+            import mysql.connector
+            try:
+                database.write_to_database(data[1:], db_address, data[0])
+            except mysql.connector.errors.ProgrammingError as e:
+                QMessageBox.critical(self, "Failed to Save Data", str(e))
+                print(f'Failed to save data: {e}')
+            except Exception as e:
+                QMessageBox.critical(self, "Error Occurred", str(e))
+                print(f'Error Occurred: {e}')
 
     def current_tab(self):
         return self.currentWidget()
@@ -251,7 +264,8 @@ class MenuBar(QWidget):
         data_button = self.create_toolbar_button(tr("data_menu"), editDropdown, lambda: self.menus.setCurrentWidget(self.tabs))
         settings_button = self.create_toolbar_button(tr("settings_menu"), editDropdown, lambda: self.menus.settings.display())
 
-        editDropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.menus.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.hideItemsOnMenu([], [merge_tabs, modify_keys], self.tabs))
+        editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnCondition([], [merge_tabs, modify_keys], self.tabs.test()))
         editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([data_button], [], self.menus.tabs))
         editDropdown.aboutToShow.connect(lambda: self.menus.disableItemsOnMenu([settings_button], [], self.menus.settings))
 
@@ -411,8 +425,17 @@ class DataTab(QStackedWidget):
             for row in range(self.table.rowCount()):
                 row_buffer = []
                 for column in range(self.table.columnCount()):
-                    item = self.table.item(row, column)
-                    row_buffer.append(item.text())
+                    try:
+                        item = self.table.item(row, column)
+
+                        if item is None:
+                            item_text = ""
+                        else:
+                            item_text = item.text()
+
+                        row_buffer.append(item_text)
+                    except Exception as e:
+                        QMessageBox.critical(self, f"Error Occurred When Retrieving Data From {self.parent.name()}", f'Item ({row}, {column}): {e}')
                 data.append(row_buffer)
             return data
 
@@ -1352,7 +1375,6 @@ class ReadMe(QTextBrowser):
         super(QWidget, self).__init__()
         self.setOpenLinks(False)
         self.setOpenExternalLinks(False)
-
         self.setMarkdown(database.get_readme())
 
 class DraggableGroupBox(QGroupBox):
@@ -1461,36 +1483,25 @@ class QListDragAndDrop(QListWidget):
        self.setAcceptDrops(True)
 
 class ScrollLabel(QScrollArea):
-
-    # constructor
     def __init__(self, *args, **kwargs):
         QScrollArea.__init__(self, *args, **kwargs)
 
-        # making widget resizable
         self.setWidgetResizable(True)
 
-        # making qwidget object
         content = QWidget(self)
         self.setWidget(content)
 
-        # vertical box layout
         lay = QVBoxLayout(content)
 
-        # creating label
         self.label = QLabel(content)
 
-        # setting alignment to the text
         self.label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        # making label multi-line
         self.label.setWordWrap(True)
 
-        # adding label to the layout
         lay.addWidget(self.label)
 
-    # the setText method
     def setText(self, text):
-        # setting text to the label
         self.label.setText(text)
 
 def start_app():
