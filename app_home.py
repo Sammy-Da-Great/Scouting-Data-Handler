@@ -1,5 +1,5 @@
 '''
-Scouting Data Handler, a custom SQL interface
+Coalition DataBeam, a custom SQL interface
 Copyright (C) 2025  Samuel Husmann
 
 This program is free software: you can redistribute it and/or modify
@@ -1375,7 +1375,6 @@ class ReadMe(QTextBrowser):
         super(QWidget, self).__init__()
         self.setOpenLinks(False)
         self.setOpenExternalLinks(False)
-
         self.setMarkdown(database.get_readme())
 
 class DraggableGroupBox(QGroupBox):

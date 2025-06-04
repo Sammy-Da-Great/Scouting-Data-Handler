@@ -1,5 +1,11 @@
-# Scouting Data Handler
-Scouting Data Handler is an app designed to reformat FRC (FIRST Robotics Competition) data for sharing within [The Olympia Robotics Federation's](https://www.orf4450.org/) (ORF) Coalition of Planets scouting alliance. \
+<div align="center">
+
+![ ](Images/logo.png)
+
+</div>
+
+# Coalition DataBeam
+Coalition DataBeam is an app designed to reformat FRC (FIRST Robotics Competition) data for sharing within the Olympia Robotics Federation's (ORF) Coalition of Planets scouting alliance. \
 The app is highly customizable and is intended to be modified to the user's preferences. It does not require modification to function.
 
 ## Features
@@ -13,7 +19,7 @@ The app is highly customizable and is intended to be modified to the user's pref
 - Python
 - MySQL
 ## GPL-3.0 License
-Scouting Data Handler, a custom SQL interface
+Coalition DataBeam, a custom SQL interface
 Copyright (C) 2025 Samuel Husmann
 
 You should have received a copy of the GNU General Public License

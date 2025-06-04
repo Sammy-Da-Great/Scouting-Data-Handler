@@ -1,5 +1,5 @@
 '''
-Scouting Data Handler, a custom SQL interface
+Coalition DataBeam, a custom SQL interface
 Copyright (C) 2025  Samuel Husmann
 
 You should have received a copy of the GNU General Public License
@@ -197,7 +197,7 @@ def get_license():
 
 def get_readme():
     text = ""
-    with open("README.md", 'r') as stream:
+    with open("README.md", 'r', encoding="utf-8") as stream:
         lines = stream.readlines()
         text = "".join(lines)
     return(text)
