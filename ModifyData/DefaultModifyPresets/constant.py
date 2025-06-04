@@ -6,7 +6,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see https://www.gnu.org/licenses/.
 '''
 
-ModifyData.ModifyPresetPreset import *
+from ModifyData.ModifyPresetPreset import *
 
 data_type = "varchar(45)"
 constants = ["const"]
